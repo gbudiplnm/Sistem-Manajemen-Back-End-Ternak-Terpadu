@@ -90,15 +90,15 @@ Java Threads: ( => current thread )
   0x000001717abd0640 JavaThread "Sweeper thread" daemon [_thread_blocked, id=1232, stack(0x00000029d9000000,0x00000029d9100000)]
   0x000001717f1ee920 JavaThread "Notification Thread" daemon [_thread_blocked, id=1276, stack(0x00000029d9100000,0x00000029d9200000)]
   0x000001717f1f70c0 JavaThread "Common-Cleaner" daemon [_thread_blocked, id=1052, stack(0x00000029d9300000,0x00000029d9400000)]
-  0x00000171503b4db0 JavaThread "ReadOnlyZKClient-hadoop-primary:2181, hbase-secondary1:2181@0x1da2cb77" daemon [_thread_blocked, id=5476, stack(0x00000029d9500000,0x00000029d9600000)]
+  0x00000171503b4db0 JavaThread "ReadOnlyZKClient-hadoop-master:2181, hbase-rs1:2181@0x1da2cb77" daemon [_thread_blocked, id=5476, stack(0x00000029d9500000,0x00000029d9600000)]
   0x000001717f113db0 JavaThread "Idle-Rpc-Conn-Sweeper-pool2-t1" daemon [_thread_blocked, id=4624, stack(0x00000029d9900000,0x00000029d9a00000)]
   0x00000171503239b0 JavaThread "RPCClient-NioEventLoopGroup-1-1" daemon [_thread_in_native, id=1916, stack(0x00000029d9b00000,0x00000029d9c00000)]
   0x0000017150322060 JavaThread "RpcClient-timer-pool1-t1" daemon [_thread_blocked, id=8992, stack(0x00000029d9c00000,0x00000029d9d00000)]
   0x0000017150322f90 JavaThread "RPCClient-NioEventLoopGroup-1-2" daemon [_thread_in_native, id=5516, stack(0x00000029d9e00000,0x00000029d9f00000)]
   0x0000017150d43fa0 JavaThread "org.apache.hadoop.fs.FileSystem$Statistics$StatisticsDataReferenceCleaner" daemon [_thread_blocked, id=956, stack(0x00000029d9f00000,0x00000029da000000)]
-  0x0000017150d42650 JavaThread "IPC Client (1828871453) connection to hadoop-primary/192.168.50.10:9000 from Nifan" daemon [_thread_blocked, id=11064, stack(0x00000029da000000,0x00000029da100000)]
+  0x0000017150d42650 JavaThread "IPC Client (1828871453) connection to hadoop-master/192.168.50.10:9000 from Nifan" daemon [_thread_blocked, id=11064, stack(0x00000029da000000,0x00000029da100000)]
   0x0000017150d43a90 JavaThread "IPC Parameter Sending Thread #0" daemon [_thread_blocked, id=2340, stack(0x00000029da100000,0x00000029da200000)]
-  0x0000017150d3da60 JavaThread "LeaseRenewer:Nifan@hadoop-primary:9000" daemon [_thread_blocked, id=10132, stack(0x00000029da300000,0x00000029da400000)]
+  0x0000017150d3da60 JavaThread "LeaseRenewer:Nifan@hadoop-master:9000" daemon [_thread_blocked, id=10132, stack(0x00000029da300000,0x00000029da400000)]
 
 Other Threads:
   0x000001717ab39f10 VMThread "VM Thread" [stack: 0x00000029d8700000,0x00000029d8800000] [id=11352]

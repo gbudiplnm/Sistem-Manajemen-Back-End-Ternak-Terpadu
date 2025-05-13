@@ -50,7 +50,7 @@ public class KandangController {
 
     @GetMapping("/file/{fileName}")
     public ResponseEntity<byte[]> getFileFromHDFS(@PathVariable String fileName) {
-        String uri = "hdfs://hadoop-primary:9000/kandang/" + fileName;
+        String uri = "hdfs://hadoop-master:9000/kandang/" + fileName;
         // String uri = "hdfs://h-primary:6912/kandang/" + fileName;
         Configuration configuration = new Configuration();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -118,8 +118,8 @@ public class KandangController {
 
                 // Mendapatkan local path dari file yang disimpan
                 String localPath = newFile.getAbsolutePath();
-                String uri = "hdfs://hadoop-primary:9000";
-                String hdfsDir = "hdfs://hadoop-primary:9000/kandang/" + newFileName + fileExtension;
+                String uri = "hdfs://hadoop-master:9000";
+                String hdfsDir = "hdfs://hadoop-master:9000/kandang/" + newFileName + fileExtension;
                 Configuration configuration = new Configuration();
                 FileSystem fs = FileSystem.get(URI.create(uri), configuration);
                 fs.copyFromLocalFile(new Path(localPath), new Path(hdfsDir));
@@ -216,8 +216,8 @@ public class KandangController {
 
                 // Mendapatkan local path dari file yang disimpan
                 String localPath = newFile.getAbsolutePath();
-                String uri = "hdfs://hadoop-primary:9000";
-                String hdfsDir = "hdfs://hadoop-primary:9000/kandang/" + newFileName + fileExtension;
+                String uri = "hdfs://hadoop-master:9000";
+                String hdfsDir = "hdfs://hadoop-master:9000/kandang/" + newFileName + fileExtension;
                 Configuration configuration = new Configuration();
                 FileSystem fs = FileSystem.get(URI.create(uri), configuration);
                 fs.copyFromLocalFile(new Path(localPath), new Path(hdfsDir));

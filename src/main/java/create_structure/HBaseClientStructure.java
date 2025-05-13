@@ -17,6 +17,7 @@ public class HBaseClientStructure {
         public static void main(String[] args) throws IOException {
 
                 Configuration conf = HBaseConfiguration.create();
+                conf.set("hbase.zookeeper.quorum", "192.168.56.101");
                 HBaseCustomClient client = new HBaseCustomClient(conf);
 
                 // ==============================================================================================
@@ -128,6 +129,26 @@ public class HBaseClientStructure {
                 client.deleteTable(tableUser);
                 client.createTable(tableUser, userdev);
 
+                TableName tableLahanHijau = TableName.valueOf("lahanHijauDev");
+                String[] lahanHijauDev = { "main","petugasInput","petugasReview","peternakInput","detail" };
+                client.deleteTable(tableLahanHijau);
+                client.createTable(tableLahanHijau, lahanHijauDev);
+
+                TableName tablePuskesmas = TableName.valueOf("puskesmasDev");
+                String[] puskesmasDev = { "main","petugasPencatat","detail" };
+                client.deleteTable(tablePuskesmas);
+                client.createTable(tablePuskesmas, puskesmasDev);
+
+                TableName tablePasarTernak = TableName.valueOf("pasarTernakDev");
+                String[] pasarTernakDev = { "main","petugasPencatat","detail" };
+                client.deleteTable(tablePasarTernak);
+                client.createTable(tablePasarTernak, pasarTernakDev);
+
+                TableName tablePusatEvakuasi = TableName.valueOf("pusatEvakuasiDev");
+                String[] pusatEvakuasiDev = { "main","petugasPencatat","detail" };
+                client.deleteTable(tablePusatEvakuasi);
+                client.createTable(tablePusatEvakuasi, pusatEvakuasiDev);
+
                 // seeder
                 // time now
                 ZoneId zoneId = ZoneId.of("Asia/Jakarta");
@@ -146,7 +167,7 @@ public class HBaseClientStructure {
                 // "2024-05-14T04:56:23.174Z");
                 client.insertRecord(tableUser, "USR001", "detail", "createdAt", "Senja007");
 
-                client.insertRecord(tableUser, "USR002", "main", "id", "USR002");
+                client.insertRecord(tableUser, "USR002", "main", "petugasId", "USR002");
                 client.insertRecord(tableUser, "USR002", "main", "name", "petugas");
                 client.insertRecord(tableUser, "USR002", "main", "username", "petugas");
                 client.insertRecord(tableUser, "USR002", "main", "email", "petugas@gmail.com");

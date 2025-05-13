@@ -43,7 +43,7 @@ public class HewanController {
 
     @GetMapping("/file/{fileName}")
     public ResponseEntity<byte[]> getFileFromHDFS(@PathVariable String fileName) {
-        String uri = "hdfs://hadoop-primary:9000/hewan/" + fileName;
+        String uri = "hdfs://hadoop-master:9000/hewan/" + fileName;
         // String uri = "hdfs://h-primary:6912/hewan/" + fileName;
         Configuration configuration = new Configuration();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -111,8 +111,8 @@ public class HewanController {
 
                 // Mendapatkan local path dari file yang disimpan
                 String localPath = newFile.getAbsolutePath();
-                String uri = "hdfs://hadoop-primary:9000";
-                String hdfsDir = "hdfs://hadoop-primary:9000/hewan/" + newFileName + fileExtension;
+                String uri = "hdfs://hadoop-master:9000";
+                String hdfsDir = "hdfs://hadoop-master:9000/hewan/" + newFileName + fileExtension;
                 Configuration configuration = new Configuration();
                 FileSystem fs = FileSystem.get(URI.create(uri), configuration);
                 fs.copyFromLocalFile(new Path(localPath), new Path(hdfsDir));
@@ -199,8 +199,8 @@ public class HewanController {
 
                 // Mendapatkan local path dari file yang disimpan
                 String localPath = newFile.getAbsolutePath();
-                String uri = "hdfs://hadoop-primary:9000";
-                String hdfsDir = "hdfs://hadoop-primary:9000/hewan/" + newFileName + fileExtension;
+                String uri = "hdfs://hadoop-master:9000";
+                String hdfsDir = "hdfs://hadoop-master:9000/hewan/" + newFileName + fileExtension;
                 // String uri = "hdfs://h-primary:6912";
                 // String hdfsDir = "hdfs://h-primary:6912/hewan/" + newFileName +
                 // fileExtension;

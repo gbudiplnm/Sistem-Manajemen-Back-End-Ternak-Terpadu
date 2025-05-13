@@ -4,54 +4,58 @@
  */
 package com.ternak.sapi.model;
 
+import lombok.Data;
+
 /**
  *
  * @author MSI MODERN 15 B13M
  */
+@Data
 public class PasarTernak {
     private String namaPasar;
     private String idPasar;
     private String latitude;
+    private String[] filePath = new String[5];
     private String longitude;
     private String alamatPasar;
+    private String catatan;
+    private Petugas petugasPencatat;
 
-    public void setAlamatPasar(String alamatPasar) {
-        this.alamatPasar = alamatPasar;
+    public PasarTernak() {
     }
 
-    public void setIdPasar(String idPasar) {
-        this.idPasar = idPasar;
+    public static class Builder {
+        private final String latitude;
+        private final String longitude;
+        private String alamat = "";
+        private String catatan = "";
+
+        public Builder(String latitude, String longitude) {
+            this.latitude = latitude;
+            this.longitude = longitude;
+        }
+
+
+        public Builder alamat(String alamat) {
+            this.alamat = alamat;
+            return this;
+        }
+
+        public Builder catatan(String catatan) {
+            this.catatan = catatan;
+            return this;
+        }
+
+        public PasarTernak build() {
+            return new PasarTernak(this);
+        }
+
     }
 
-    public void setLatitude(String latitude) {
-        this.latitude = latitude;
-    }
-
-    public void setLongitude(String longitude) {
-        this.longitude = longitude;
-    }
-
-    public void setNamaPasar(String namaPasar) {
-        this.namaPasar = namaPasar;
-    }
-
-    public String getAlamatPasar() {
-        return alamatPasar;
-    }
-
-    public String getIdPasar() {
-        return idPasar;
-    }
-
-    public String getLatitude() {
-        return latitude;
-    }
-
-    public String getLongitude() {
-        return longitude;
-    }
-
-    public String getNamaPasar() {
-        return namaPasar;
+    public PasarTernak(Builder builder){
+        this.alamatPasar = builder.alamat;
+        this.catatan = builder.catatan;
+        this.latitude = builder.latitude;
+        this.longitude = builder.longitude;
     }
 }

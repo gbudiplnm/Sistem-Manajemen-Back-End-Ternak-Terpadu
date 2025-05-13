@@ -45,7 +45,7 @@ public class JenisHewanController {
 
     @GetMapping("/file/{fileName}")
     public ResponseEntity<byte[]> getFileFromHDFS(@PathVariable String fileName) {
-        String uri = "hdfs://hadoop-primary:9000/jenishewan/" + fileName;
+        String uri = "hdfs://hadoop-master:9000/jenishewan/" + fileName;
         // String uri = "hdfs://h-primary:6912/hewan/" + fileName;
         Configuration configuration = new Configuration();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

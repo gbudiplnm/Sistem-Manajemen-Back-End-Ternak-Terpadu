@@ -42,7 +42,7 @@ public class RumpunHewanController {
 
     @GetMapping("/file/{fileName}")
     public ResponseEntity<byte[]> getFileFromHDFS(@PathVariable String fileName) {
-        String uri = "hdfs://hadoop-primary:9000/rumpunhewan/" + fileName;
+        String uri = "hdfs://hadoop-master:9000/rumpunhewan/" + fileName;
         // String uri = "hdfs://h-primary:6912/hewan/" + fileName;
         Configuration configuration = new Configuration();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

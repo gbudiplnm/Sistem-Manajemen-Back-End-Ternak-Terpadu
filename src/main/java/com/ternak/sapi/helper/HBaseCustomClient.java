@@ -15,12 +15,14 @@ import org.apache.hadoop.hbase.util.Bytes;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class HBaseCustomClient {
 
@@ -155,7 +157,17 @@ public class HBaseCustomClient {
                     String columnName = Bytes.toString(CellUtil.cloneQualifier(cell));
 
                     // Get the variable name from the columnMapping
-                    String variableName = columnMapping.get(columnName);
+                    String variableName = columnName;
+                    int underscoreIndex = columnName.indexOf("_");
+                    if (underscoreIndex != -1) {
+                        int numberStartIndex = underscoreIndex + 1;
+                        int numberEndIndex = numberStartIndex;
+                        while (numberEndIndex < columnName.length() && Character.isDigit(columnName.charAt(numberEndIndex))) {
+                            numberEndIndex++;
+                        }
+                        variableName = columnName.substring(0, underscoreIndex);
+                    }
+                    variableName = columnMapping.get(variableName);
 
                     String value = Bytes.toString(CellUtil.cloneValue(cell));
                     // Get the value of the cell as a string
@@ -176,6 +188,7 @@ public class HBaseCustomClient {
                                 familyField.set(object, familyObject);
                             }
                         }
+
                         // Set the value to the subfield
                         if (familyObject instanceof List) {
                             Object currentObject = familyObject;
@@ -209,7 +222,33 @@ public class HBaseCustomClient {
                             // Set the value to the variable
                             Field field = object.getClass().getDeclaredField(variableName);
                             field.setAccessible(true);
-                            setField(field, object, value);
+                            if (field.getType().isEnum()) {
+                                Object[] enumConstants = field.getType().getEnumConstants();
+                                String enumName = value;
+                                for (Object constant : enumConstants) {
+                                    if (((Enum) constant).name().equals(enumName)) {
+                                        field.set(object, constant);
+                                        break;
+                                    }
+                                }
+                            } else if (field.getType().isArray()) {
+                                Object[] currentValues = (Object[]) field.get(object);
+                                Class<?> componentType = field.getType().getComponentType();
+                                List<Object> currentValueList = new ArrayList<>();
+                                if (currentValues != null && currentValues.length > 0) {
+                                    for (Object currentValue : currentValues) {
+                                        if (currentValue != null) {
+                                            currentValueList.add(currentValue);
+                                        }
+                                    }
+                                    currentValueList.add(value);
+                                    field.set(object, currentValueList.toArray((Object[]) Array.newInstance(componentType, currentValueList.size())));
+                                } else {
+                                    field.set(object, new Object[]{value});
+                                }
+                            } else {
+                                setField(field, object, value);
+                            }
                         }
                     }
                 }

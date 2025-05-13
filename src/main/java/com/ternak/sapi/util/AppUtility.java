@@ -6,6 +6,8 @@ package com.ternak.sapi.util;
 
 import com.ternak.sapi.exception.BadRequestException;
 import com.ternak.sapi.helper.HBaseCustomClient;
+
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -31,27 +33,24 @@ public class AppUtility {
     }
 
     private static boolean isValidGetter(Method method) {
-        return method.getName().startsWith("get")
-                && method.getParameterCount() == 0
-                && !method.getName().equals("getClass")
-                && Modifier.isPublic(method.getModifiers());
+        return Modifier.isPublic(method.getModifiers())
+            && method.getParameterCount() == 0
+            && method.getName().startsWith("get")
+            && !method.getName().equals("getClass");
     }
 
     private static boolean isSimpleType(Class<?> clazz) {
         return clazz.isPrimitive()
-                || clazz == String.class
-                || clazz == Integer.class
-                || clazz == Long.class
-                || clazz == Double.class
-                || clazz == Float.class
-                || clazz == Boolean.class
-                || clazz == Short.class
-                || clazz == Byte.class
-                || clazz == Character.class;
+            || clazz == String.class
+            || Number.class.isAssignableFrom(clazz)
+            || clazz == Boolean.class
+            || clazz == Character.class
+            || clazz.isEnum(); // Enum support
     }
 
     private static String getFieldNameFromGetter(String getterName) {
-        return Character.toLowerCase(getterName.charAt(3)) + getterName.substring(4);
+        String withoutGet = getterName.substring(3); // remove "get"
+        return Character.toLowerCase(withoutGet.charAt(0)) + withoutGet.substring(1);
     }
 
     public static void validatePageNumberAndSize(int page, int size) {
@@ -64,22 +63,40 @@ public class AppUtility {
         }
     }
 
+    private static String getSimpleValue(Object value) {
+        if (value instanceof Enum<?>) {
+            return ((Enum<?>) value).name();
+        }
+        return value.toString();
+    }
+
     public static void insertNonNullFields(Object obj, TableName tableName, String rowKey, HBaseCustomClient client) {
         Method[] methods = obj.getClass().getMethods();
-
+    
         for (Method method : methods) {
             String methodName = method.getName();
-
+    
             if (isValidGetter(method)) {
                 try {
                     Object value = method.invoke(obj);
                     if (value != null) {
                         String fieldName = getFieldNameFromGetter(methodName);
-
-                        if (isSimpleType(value.getClass())) {
-                            // Direct simple field, insert
-                            client.insertRecord(tableName, rowKey, "main", fieldName, safeString(value.toString()));
-
+    
+                        if (value.getClass().isArray()) {
+                            int length = Array.getLength(value);
+                            for (int i = 0; i < length; i++) {
+                                Object element = Array.get(value, i);
+                                if (element != null && isSimpleType(element.getClass())) {
+                                    client.insertRecord(tableName, rowKey, "detail", fieldName + "_" + i, safeString(getSimpleValue(element)));
+                                }
+                            }
+    
+                        }
+                        else if (isSimpleType(value.getClass())) {
+                            // Direct simple field, including enums
+                            String stringValue = safeString(value instanceof Enum ? ((Enum<?>) value).name() : value.toString());
+                            client.insertRecord(tableName, rowKey, "detail", fieldName, stringValue);
+    
                         } else {
                             // It's an object — go one level deeper
                             Method[] subMethods = value.getClass().getMethods();
@@ -87,15 +104,16 @@ public class AppUtility {
                                 if (isValidGetter(subMethod)) {
                                     Object subValue = subMethod.invoke(value);
                                     if (subValue != null && isSimpleType(subValue.getClass())) {
-                                        String subFieldName = fieldName + "_" + getFieldNameFromGetter(subMethod.getName());
-                                        client.insertRecord(tableName, rowKey, "main", subFieldName, safeString(subValue.toString()));
+                                        String subFieldName = getFieldNameFromGetter(subMethod.getName());
+                                        String stringSubValue = safeString(subValue instanceof Enum ? ((Enum<?>) subValue).name() : subValue.toString());
+                                        client.insertRecord(tableName, rowKey, fieldName, subFieldName, stringSubValue);
                                     }
                                 }
                             }
                         }
                     }
-
-                } catch (IllegalAccessException | SecurityException | InvocationTargetException e) {
+    
+                } catch (IllegalAccessException | InvocationTargetException e) {
                     e.printStackTrace();
                 }
             }

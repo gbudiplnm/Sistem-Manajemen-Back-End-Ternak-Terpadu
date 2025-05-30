@@ -1,5 +1,7 @@
 package com.ternak.sapi.payload;
 
+import com.ternak.sapi.security.UserPrincipal;
+
 public class UserSummary {
     private String id;
     private String username;
@@ -8,6 +10,17 @@ public class UserSummary {
     private String description;
     private String email;
     private String avatar;
+    
+    public UserSummary(UserPrincipal user) {
+        UserSummary userSummary = new UserSummary(user.getId(), user.getUsername(), user.getEmail(), user.getName(), user.getRole().equalsIgnoreCase("1") ? "ROLE_ADMINISTRATOR" : user.getRole().equalsIgnoreCase("2") ? "ROLE_PETUGAS" : "ROLE_PETERNAK", "", "");
+        this.id = userSummary.getId();
+        this.username = userSummary.getUsername();
+        this.name = userSummary.getName();
+        this.role = userSummary.getRole();
+        this.description = userSummary.getDescription();
+        this.email = userSummary.getEmail();
+        this.avatar = userSummary.getAvatar();
+    }
 
     public UserSummary(String id, String username, String name,String email, String role, String description, String avatar) {
         this.id = id;

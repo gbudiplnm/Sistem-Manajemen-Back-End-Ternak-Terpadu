@@ -43,7 +43,7 @@ public class HewanController {
 
     @GetMapping("/file/{fileName}")
     public ResponseEntity<byte[]> getFileFromHDFS(@PathVariable String fileName) {
-        String uri = "hdfs://hadoop-primary:9000/hewan/" + fileName;
+        String uri = "hdfs://hadoop-master:9000/hewan/" + fileName;
         // String uri = "hdfs://h-primary:6912/hewan/" + fileName;
         Configuration configuration = new Configuration();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -78,8 +78,6 @@ public class HewanController {
             @RequestPart(value = "file", required = false) MultipartFile file,
             @ModelAttribute HewanRequest hewanRequest) throws IOException {
 
-        System.out.println(file);
-
         if (file != null && !file.isEmpty()) { // Perbaikan di sini
             // Proses upload file
             try {
@@ -111,8 +109,8 @@ public class HewanController {
 
                 // Mendapatkan local path dari file yang disimpan
                 String localPath = newFile.getAbsolutePath();
-                String uri = "hdfs://hadoop-primary:9000";
-                String hdfsDir = "hdfs://hadoop-primary:9000/hewan/" + newFileName + fileExtension;
+                String uri = "hdfs://hadoop-master:9000";
+                String hdfsDir = "hdfs://hadoop-master:9000/hewan/" + newFileName + fileExtension;
                 Configuration configuration = new Configuration();
                 FileSystem fs = FileSystem.get(URI.create(uri), configuration);
                 fs.copyFromLocalFile(new Path(localPath), new Path(hdfsDir));
@@ -173,9 +171,10 @@ public class HewanController {
 
     @PutMapping("/{idHewan}")
     public ResponseEntity<?> updateHewan(@PathVariable String idHewan,
-            @RequestPart(value = "file",required = false) MultipartFile file, @ModelAttribute HewanRequest hewanRequest) throws IOException {
+            @RequestPart(value = "file", required = false) MultipartFile file,
+            @ModelAttribute HewanRequest hewanRequest) throws IOException {
         // upload file
-        if(file != null && !file.isEmpty()) {
+        if (file != null && !file.isEmpty()) {
             try {
                 // Mendapatkan nama file asli
                 String originalFileName = file.getOriginalFilename();
@@ -199,8 +198,8 @@ public class HewanController {
 
                 // Mendapatkan local path dari file yang disimpan
                 String localPath = newFile.getAbsolutePath();
-                String uri = "hdfs://hadoop-primary:9000";
-                String hdfsDir = "hdfs://hadoop-primary:9000/hewan/" + newFileName + fileExtension;
+                String uri = "hdfs://hadoop-master:9000";
+                String hdfsDir = "hdfs://hadoop-master:9000/hewan/" + newFileName + fileExtension;
                 // String uri = "hdfs://h-primary:6912";
                 // String hdfsDir = "hdfs://h-primary:6912/hewan/" + newFileName +
                 // fileExtension;
@@ -224,9 +223,9 @@ public class HewanController {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse(false, "Cannot Upload File into Hadoop"));
             }
-        }else{
+        } else {
             try {
-                Hewan hewan = hewanService.updateHewan(idHewan,hewanRequest, "");
+                Hewan hewan = hewanService.updateHewan(idHewan, hewanRequest, "");
 
                 if (hewan == null) {
                     return ResponseEntity.badRequest()

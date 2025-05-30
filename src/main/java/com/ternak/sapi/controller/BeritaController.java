@@ -44,7 +44,7 @@ public class BeritaController {
        
     @GetMapping("/file/{fileName}")
     public ResponseEntity<byte[]> getFileFromHDFS(@PathVariable String fileName) {
-        String uri = "hdfs://hadoop-primary:9000/berita/" + fileName;
+        String uri = "hdfs://hadoop-master:9000/berita/" + fileName;
       //  String uri = "hdfs://h-primary:6912/berita/" + fileName;
         Configuration configuration = new Configuration();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -102,8 +102,8 @@ public class BeritaController {
 
                 // Mendapatkan local path dari file yang disimpan
                 String localPath = newFile.getAbsolutePath();
-                String uri = "hdfs://hadoop-primary:9000";
-                String hdfsDir = "hdfs://hadoop-primary:9000/berita/" + newFileName + fileExtension;
+                String uri = "hdfs://hadoop-master:9000";
+                String hdfsDir = "hdfs://hadoop-master:9000/berita/" + newFileName + fileExtension;
 //                   String uri = "hdfs://h-primary:6912";
 //                String hdfsDir = "hdfs://h-primary:6912/berita/" + newFileName + fileExtension;
 //                 String uri = "localhost:8081/api";
@@ -194,8 +194,8 @@ public class BeritaController {
 
             // Mendapatkan local path dari file yang disimpan
             String localPath = newFile.getAbsolutePath();
-            String uri = "hdfs://hadoop-primary:9000";
-            String hdfsDir = "hdfs://hadoop-primary:9000/berita/" + newFileName + fileExtension;
+            String uri = "hdfs://hadoop-master:9000";
+            String hdfsDir = "hdfs://hadoop-master:9000/berita/" + newFileName + fileExtension;
 //   String uri = "hdfs://h-primary:6912";
 //                String hdfsDir = "hdfs://h-primary:6912/berita/" + newFileName + fileExtension;
             Configuration configuration = new Configuration();

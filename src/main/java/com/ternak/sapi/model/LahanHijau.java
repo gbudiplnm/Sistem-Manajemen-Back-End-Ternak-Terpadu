@@ -28,7 +28,10 @@ public class LahanHijau {
     private Peternak peternakInput;
     private Petugas petugasReview;
     private LahanStatus statusLahan;
-    private String alamat;
+    private String kecamatan;
+    private String desa;
+    private String kabupatenKota;
+    private String provinsi;
     private String catatan;
     
     public LahanHijau(){
@@ -43,9 +46,12 @@ public class LahanHijau {
     public static class Builder{
         private final String latitude;
         private final String longitude;
+        private String kecamatan = "";
+        private String desa = "";
+        private String kabupatenKota = "";
+        private String provinsi = "";
         private String luasLahan = "0";
         private final LahanStatus statusLahan = LahanStatus.PENDING;
-        private String alamat = "";
         private String catatan = "";
         public Builder(String latitude, String longitude){
             this.latitude = latitude;
@@ -53,11 +59,6 @@ public class LahanHijau {
         }
         public Builder luasLahan(String luasLahan){
             this.luasLahan = luasLahan;
-            return this;
-        }
-        
-        public Builder alamat(String alamat){
-            this.alamat = alamat;
             return this;
         }
         
@@ -69,16 +70,39 @@ public class LahanHijau {
         public LahanHijau build(){
             return new LahanHijau(this);
         }
+
+        public Builder kecamatan(String kecamatan) {
+            this.kecamatan = kecamatan;
+            return this;
+        }
+
+        public Builder desa(String desa) {
+            this.desa = desa;
+            return this;
+        }
+
+        public Builder kabupatenKota(String kabupatenKota) {
+            this.kabupatenKota = kabupatenKota;
+            return this;
+        }
+
+        public Builder provinsi(String provinsi) {
+            this.provinsi = provinsi;
+            return this;
+        }
         
     }
 
     public LahanHijau(Builder builder){
-        this.alamat = builder.alamat;
         this.catatan = builder.catatan;
         this.latitude = builder.latitude;
         this.longitude = builder.longitude;
         this.luasLahan = builder.luasLahan;
         this.statusLahan = builder.statusLahan;
+        this.kecamatan = builder.kecamatan;
+        this.desa = builder.desa;
+        this.kabupatenKota = builder.kabupatenKota;
+        this.provinsi = builder.provinsi;
     }
 
     

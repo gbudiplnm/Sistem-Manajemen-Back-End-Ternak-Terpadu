@@ -78,8 +78,6 @@ public class HewanController {
             @RequestPart(value = "file", required = false) MultipartFile file,
             @ModelAttribute HewanRequest hewanRequest) throws IOException {
 
-        System.out.println(file);
-
         if (file != null && !file.isEmpty()) { // Perbaikan di sini
             // Proses upload file
             try {
@@ -173,9 +171,10 @@ public class HewanController {
 
     @PutMapping("/{idHewan}")
     public ResponseEntity<?> updateHewan(@PathVariable String idHewan,
-            @RequestPart(value = "file",required = false) MultipartFile file, @ModelAttribute HewanRequest hewanRequest) throws IOException {
+            @RequestPart(value = "file", required = false) MultipartFile file,
+            @ModelAttribute HewanRequest hewanRequest) throws IOException {
         // upload file
-        if(file != null && !file.isEmpty()) {
+        if (file != null && !file.isEmpty()) {
             try {
                 // Mendapatkan nama file asli
                 String originalFileName = file.getOriginalFilename();
@@ -224,9 +223,9 @@ public class HewanController {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse(false, "Cannot Upload File into Hadoop"));
             }
-        }else{
+        } else {
             try {
-                Hewan hewan = hewanService.updateHewan(idHewan,hewanRequest, "");
+                Hewan hewan = hewanService.updateHewan(idHewan, hewanRequest, "");
 
                 if (hewan == null) {
                     return ResponseEntity.badRequest()

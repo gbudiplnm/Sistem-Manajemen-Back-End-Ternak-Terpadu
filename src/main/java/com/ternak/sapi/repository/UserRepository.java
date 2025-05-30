@@ -23,6 +23,7 @@ import org.springframework.stereotype.Repository;
 
 import com.ternak.sapi.helper.HBaseCustomClient;
 import com.ternak.sapi.model.User;
+import com.ternak.sapi.util.AppUtility;
 
 @Repository
 public class UserRepository {
@@ -115,6 +116,26 @@ public class UserRepository {
         Map<String, String> columnMapping = new HashMap<>();
 
         // Add the mappings to the HashMap
+        columnMapping.put("id", "id");
+        columnMapping.put("password", "password");
+
+        User user =  client.getDataByColumn(tableUsers.toString(), columnMapping, "main", "id", userId, User.class);
+
+        return user.getId() != null ? user : null;
+    }
+
+    public User findByUserIdAll(String userId) throws IOException {
+        HBaseCustomClient client = new HBaseCustomClient(conf);
+
+        TableName tableUsers = TableName.valueOf(tableName);
+        Map<String, String> columnMapping = new HashMap<>();
+
+        List<String> columns = AppUtility.getAttributeNames(User.class);
+        // Add the mappings to the HashMap
+        for (String column : columns) {
+            if(column.equals("createdAt")) continue;
+            columnMapping.put(column, column);
+        }
         columnMapping.put("id", "id");
         columnMapping.put("password", "password");
 

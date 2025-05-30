@@ -162,7 +162,8 @@ public class HBaseCustomClient {
                     if (underscoreIndex != -1) {
                         int numberStartIndex = underscoreIndex + 1;
                         int numberEndIndex = numberStartIndex;
-                        while (numberEndIndex < columnName.length() && Character.isDigit(columnName.charAt(numberEndIndex))) {
+                        while (numberEndIndex < columnName.length()
+                                && Character.isDigit(columnName.charAt(numberEndIndex))) {
                             numberEndIndex++;
                         }
                         variableName = columnName.substring(0, underscoreIndex);
@@ -242,9 +243,10 @@ public class HBaseCustomClient {
                                         }
                                     }
                                     currentValueList.add(value);
-                                    field.set(object, currentValueList.toArray((Object[]) Array.newInstance(componentType, currentValueList.size())));
+                                    field.set(object, currentValueList.toArray(
+                                            (Object[]) Array.newInstance(componentType, currentValueList.size())));
                                 } else {
-                                    field.set(object, new Object[]{value});
+                                    field.set(object, new Object[] { value });
                                 }
                             } else {
                                 setField(field, object, value);
@@ -368,72 +370,95 @@ public class HBaseCustomClient {
         return null;
     }
 
-    public <T> T getDataByColumn(String tableName, Map<String, String> columnMapping, String familyName,
-            String columnName, String columnValue, Class<T> modelClass) {
-        try {
-            // Create HBase table object
-            Table table = connection.getTable(TableName.valueOf(tableName));
+    public <T> T getDataByColumn(String tableName,
+            Map<String, String> columnMapping,
+            String familyName,
+            String columnName,
+            String columnValue,
+            Class<T> modelClass) {
+        try (Table table = connection.getTable(TableName.valueOf(tableName))) {
 
-            // Create Scan object to scan table
+            // Prepare scan with filter
             Scan scan = new Scan();
             scan.setCaching(100);
             scan.setLimit(1000);
-
-            // Add filter to scan by column value
-            Filter filter = new SingleColumnValueFilter(Bytes.toBytes(familyName), Bytes.toBytes(columnName),
-                    CompareOperator.EQUAL, Bytes.toBytes(columnValue));
+            Filter filter = new SingleColumnValueFilter(
+                    Bytes.toBytes(familyName),
+                    Bytes.toBytes(columnName),
+                    CompareOperator.EQUAL,
+                    Bytes.toBytes(columnValue));
             scan.setFilter(filter);
 
-            // Create a list to store the objects
-            T object = modelClass.newInstance();
+            // Create instance of model class
+            T object = modelClass.getDeclaredConstructor().newInstance();
+            ObjectMapper mapper = new ObjectMapper();
 
-            // Scan the table and get the data
-            ResultScanner scanner = table.getScanner(scan);
-            for (Result result : scanner) {
-                // Do something with the result, e.g. print it to the console
-                for (Cell cell : result.rawCells()) {
-                    String familyName2 = Bytes.toString(CellUtil.cloneFamily(cell));
-                    String columnName2 = Bytes.toString(CellUtil.cloneQualifier(cell));
-                    // Get the variable name from the columnMapping
-                    String variableName = columnMapping.get(columnName2);
-
-                    if (variableName != null) {
-                        // Get the value of the cell as a string
+            // Start scanning
+            try (ResultScanner scanner = table.getScanner(scan)) {
+                for (Result result : scanner) {
+                    for (Cell cell : result.rawCells()) {
+                        String cellFamily = Bytes.toString(CellUtil.cloneFamily(cell));
+                        String cellColumn = Bytes.toString(CellUtil.cloneQualifier(cell));
                         String value = Bytes.toString(CellUtil.cloneValue(cell));
-                        // Check if the variableName contains "department"
-                        if (columnMapping.containsKey(familyName2)) {
-                            // Get the subfield name
-                            String subFieldName = variableName.substring(variableName.indexOf(".") + 1);
-                            // Get the department object from the main object
-                            Field familyField = object.getClass().getDeclaredField(familyName2);
-                            familyField.setAccessible(true);
-                            Object familyObject = familyField.get(object);
-                            if (familyObject == null) {
-                                familyObject = familyField.getType().newInstance();
-                                familyField.set(object, familyObject);
+                        String mappedField = columnMapping.get(cellColumn);
+
+                        if (mappedField == null)
+                            continue;
+
+                        if (mappedField.contains(".")) {
+                            // Handle nested field like "department.name"
+                            String[] parts = mappedField.split("\\.");
+                            String outerFieldName = parts[0];
+                            String innerFieldName = parts[1];
+
+                            Field outerField = modelClass.getDeclaredField(outerFieldName);
+                            outerField.setAccessible(true);
+                            Object nestedObject = outerField.get(object);
+                            if (nestedObject == null) {
+                                nestedObject = outerField.getType().getDeclaredConstructor().newInstance();
+                                outerField.set(object, nestedObject);
                             }
-                            // Set the value to the subfield
-                            Field subField = familyObject.getClass().getDeclaredField(subFieldName);
-                            subField.setAccessible(true);
-                            setField(subField, familyObject, value);
+
+                            Field innerField = nestedObject.getClass().getDeclaredField(innerFieldName);
+                            innerField.setAccessible(true);
+                            setField(innerField, nestedObject, value);
+
                         } else {
-                            // Set the value to the variable
-                            Field field = object.getClass().getDeclaredField(variableName);
+                            // Handle flat fields
+                            Field field = modelClass.getDeclaredField(mappedField);
                             field.setAccessible(true);
-                            setField(field, object, value);
+
+                            // Handle List fields with JSON values
+                            if (List.class.isAssignableFrom(field.getType())) {
+                                List<Object> list = (List<Object>) field.get(object);
+                                if (list == null) {
+                                    list = new ArrayList<>();
+                                    field.set(object, list);
+                                }
+
+                                if (value.startsWith("{") || value.startsWith("[")) {
+                                    try {
+                                        Object json = mapper.readValue(value, Object.class);
+                                        list.add(json);
+                                    } catch (Exception e) {
+                                        list.add(value); // fallback
+                                    }
+                                } else {
+                                    list.add(value);
+                                }
+                            } else {
+                                setField(field, object, value);
+                            }
                         }
                     }
                 }
             }
 
-            // Close the scanner and table objects
-            table.close();
             return object;
-        } catch (IOException | InstantiationException | IllegalAccessException | NoSuchFieldException e) {
-            e.printStackTrace();
-        }
 
-        return null;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to fetch data from HBase: " + e.getMessage(), e);
+        }
     }
 
     public <T> List<T> getDataListByColumn(String tableName, Map<String, String> columnMapping, String familyName,
@@ -715,7 +740,9 @@ public class HBaseCustomClient {
         } else if (fieldType == Instant.class) {
             Instant instantValue = Instant.parse(value);
             field.set(object, instantValue);
-
+        } else if (fieldType.isEnum()) {
+            Object enumValue = Enum.valueOf((Class<Enum>) fieldType, value);
+            field.set(object, enumValue);
         } else {
             // Tipe data yang tidak dikenal, lewati saja
             System.out.println("Tipe data " + fieldType + " tidak dikenali.");

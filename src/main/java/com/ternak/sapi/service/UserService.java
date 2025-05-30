@@ -78,6 +78,10 @@ public class UserService {
         return userRepository.saveForm(user);
     }
 
+    public User getUserById(String userId) throws IOException {
+        return userRepository.findByUserIdAll(userId);
+    }
+
     @Transactional
     public User update(String userId, UserRequest userRequest)throws  IOException{
         User user = new User();

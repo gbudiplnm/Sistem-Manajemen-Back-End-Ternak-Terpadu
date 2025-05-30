@@ -112,6 +112,13 @@ public class PetugasService {
                 petugasResponse.isValid() ? 1 : 0, "Successfully get data");
     }
 
+    public DefaultResponse<Petugas> getPetugasByNik(String nik) throws IOException {
+        // Retrieve Petugas
+        Petugas petugasResponse = petugasRepository.findByNik(nik);
+        return new DefaultResponse<>(petugasResponse.isValid() ? petugasResponse : null,
+                petugasResponse.isValid() ? 1 : 0, "Successfully get data");
+    }
+
     // public void save(Hewan hewan) throws IOException {
     // // Simulasi penyimpanan hewan, sesuaikan dengan HBaseClient Anda
     // hBaseClient.saveData("hewanTable", hewan);

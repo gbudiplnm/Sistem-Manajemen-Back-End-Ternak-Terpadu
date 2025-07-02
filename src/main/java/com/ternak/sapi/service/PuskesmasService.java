@@ -1,6 +1,7 @@
 package com.ternak.sapi.service;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -8,10 +9,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.ternak.sapi.model.Puskesmas;
 import com.ternak.sapi.exception.ApiException;
-import com.ternak.sapi.exception.BadRequestException;
 import com.ternak.sapi.model.Petugas;
 import com.ternak.sapi.payload.DefaultResponse;
 import com.ternak.sapi.payload.PagedResponse;
+import com.ternak.sapi.payload.PuskesmasEditRequest;
 import com.ternak.sapi.payload.PuskesmasRequest;
 import com.ternak.sapi.queries.UniversalQueries;
 import com.ternak.sapi.repository.PuskesmasRepository;
@@ -32,17 +33,21 @@ public class PuskesmasService {
     public Puskesmas savePuskesmas(PuskesmasRequest puskesmasRequest) throws IOException {
         String idPuskesmas = java.util.UUID.randomUUID().toString();
         DefaultResponse<Petugas> petugas = petugasService.getPetugasById(puskesmasRequest.getPetugasPencatat());
-        String [] path = new String[puskesmasRequest.getFilePath().length];
-        int i = 0;
+        List<String> pathLists = new java.util.ArrayList<>();
         for (MultipartFile file : puskesmasRequest.getFilePath()) {
             String idGambar = java.util.UUID.randomUUID().toString();
             String filePath = hadoopFileService.uploadFile(idGambar, file, "puskesmas");
-            path[i] = filePath;
-            i++;
+            pathLists.add(filePath);
         }
+        String[] path = Arrays.copyOf(pathLists.toArray(), pathLists.size(), String[].class);
         Puskesmas puskesmas = new Puskesmas.Builder(puskesmasRequest.getNamaPuskesmas(),
                 puskesmasRequest.getLongitude(), puskesmasRequest.getLatitude())
-                .alamat(puskesmasRequest.getAlamat())
+                .desa(puskesmasRequest.getDesa())
+                .dataLayanan(puskesmasRequest.getDataLayanan())
+                .keterangan(puskesmasRequest.getKeterangan())
+                .kecamatan(puskesmasRequest.getKecamatan())
+                .kabupatenKota(puskesmasRequest.getKabupatenKota())
+                .provinsi(puskesmasRequest.getProvinsi())
                 .catatan(puskesmasRequest.getCatatan())
                 .idPuskesmas(idPuskesmas)
                 .filePath(path)
@@ -57,23 +62,69 @@ public class PuskesmasService {
         return puskesmas;
     }
 
-    public Puskesmas updatePuskesmas(String id, PuskesmasRequest puskesmasRequest) throws IOException {
+    public Puskesmas updatePuskesmas(String id, PuskesmasEditRequest puskesmasRequest) throws IOException {
         Puskesmas puskesmas = puskesmasRepository.findPuskesmasById(id);
-        Petugas petugasReview = petugasService.getPetugasById(puskesmasRequest.getPetugasPencatat()).getContent();
-        String [] path = new String[puskesmasRequest.getFilePath().length];
-        int i = 0;
-        for (MultipartFile file : puskesmasRequest.getFilePath()) {
-            String filePath = hadoopFileService.uploadFile(puskesmas.getIdPuskesmas(), file, "puskesmas");
-            path[i] = filePath;
-            i++;
-        }
         if (puskesmas != null) {
-            puskesmas.setAlamat(puskesmasRequest.getAlamat());
+            puskesmas.setNamaPuskesmas(puskesmasRequest.getNamaPuskesmas());
+            puskesmas.setLongitude(puskesmasRequest.getLongitude());
+            puskesmas.setLatitude(puskesmasRequest.getLatitude());
+            puskesmas.setDesa(puskesmasRequest.getDesa());
+            puskesmas.setKecamatan(puskesmasRequest.getKecamatan());
+            puskesmas.setKabupatenKota(puskesmasRequest.getKabupatenKota());
+            puskesmas.setProvinsi(puskesmasRequest.getProvinsi());
             puskesmas.setCatatan(puskesmasRequest.getCatatan());
-            puskesmas.setFilePath(path);
-            puskesmas.setPetugasPencatat(petugasReview);
+            puskesmas.setKeterangan(puskesmasRequest.getKeterangan());
+            puskesmas.setDataLayanan(puskesmasRequest.getDataLayanan());
+        } else {
+            throw new ApiException(HttpStatus.NOT_FOUND, "Data Puskesmas Tidak Ditemukan");
         }
         Puskesmas puskesmasUpdated = puskesmasRepository.save(puskesmas);
         return puskesmasUpdated;
     }
+
+       
+    public boolean deleteFile(String path, String id) throws IOException {
+        try {
+            Puskesmas puskesmas = puskesmasRepository.findPuskesmasById(id);
+            String[] oldPaths = puskesmas.getFilePath();
+            String[] newPaths = new String[oldPaths.length - 1];
+            for (String string : oldPaths) {
+                if (!string.equalsIgnoreCase(path)) {
+                    newPaths[newPaths.length - newPaths.length] = string;
+                }
+            }
+            puskesmas.setFilePath(newPaths);
+
+            puskesmasRepository.save(puskesmas);
+            return hadoopFileService.deleteFile(path);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ApiException(HttpStatus.NOT_FOUND, "Data Puskesmas Tidak Ditemukan");
+        }
+    }
+
+    public String[] uploadFile(MultipartFile[] files, String id) throws IOException {
+        String[] paths = new String[files.length];
+        for (int i = 0; i < files.length; i++) {
+            String idGambar = java.util.UUID.randomUUID().toString();
+            String filePath = hadoopFileService.uploadFile(idGambar, files[i], "puskesmas");
+            paths[i] = filePath;
+        }
+        try {
+            Puskesmas puskesmas = puskesmasRepository.findPuskesmasById(id);
+            String[] oldPaths = puskesmas.getFilePath();
+            String[] newPaths = new String[oldPaths.length + paths.length];
+            System.arraycopy(oldPaths, 0, newPaths, 0, oldPaths.length);
+            System.arraycopy(paths, 0, newPaths, oldPaths.length, paths.length);
+            puskesmas.setFilePath(newPaths);
+            puskesmasRepository.save(puskesmas);
+        } catch (Exception e) {
+            for (String filePath : paths) {
+                hadoopFileService.deleteFile(filePath);
+            }
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Terjadi Kesalahan");
+        }
+        return paths;
+    }
+
 }

@@ -7,6 +7,8 @@ package com.ternak.sapi.model;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.stream.Collectors;
+
+import enums.JenisHewanEnum;
 import enums.LahanStatus;
 import lombok.Data;
 
@@ -21,9 +23,11 @@ public class LahanHijau {
     private String idLahan;
     
     private String luasLahan;
+    private String namaLahanHijau;
+    private JenisHewanEnum jenisHewan;
     private String latitude;
     private String longitude;
-    private String[] filePath = new String[5];
+    private String[] filePath;
     private Petugas petugasInput;
     private Peternak peternakInput;
     private Petugas petugasReview;
@@ -47,6 +51,8 @@ public class LahanHijau {
         private final String latitude;
         private final String longitude;
         private String kecamatan = "";
+        private String namaLahanHijau = "";
+        private JenisHewanEnum jenisHewan = JenisHewanEnum.Sapi;
         private String desa = "";
         private String kabupatenKota = "";
         private String provinsi = "";
@@ -57,6 +63,17 @@ public class LahanHijau {
             this.latitude = latitude;
             this.longitude = longitude;
         }
+
+        public Builder namaLahanHijau(String namaLahanHijau){
+            this.namaLahanHijau = namaLahanHijau;
+            return this;
+        }
+
+        public Builder jenisHewan(JenisHewanEnum jenisHewan){
+            this.jenisHewan = jenisHewan;
+            return this;
+        }
+
         public Builder luasLahan(String luasLahan){
             this.luasLahan = luasLahan;
             return this;
@@ -94,6 +111,8 @@ public class LahanHijau {
     }
 
     public LahanHijau(Builder builder){
+        this.jenisHewan = builder.jenisHewan;
+        this.namaLahanHijau = builder.namaLahanHijau;
         this.catatan = builder.catatan;
         this.latitude = builder.latitude;
         this.longitude = builder.longitude;

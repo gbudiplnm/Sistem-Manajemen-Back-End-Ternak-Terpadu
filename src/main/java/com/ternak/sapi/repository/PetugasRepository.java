@@ -207,8 +207,8 @@ public class PetugasRepository {
         columnMapping.put("job", "job");
         columnMapping.put("wilayah", "wilayah");
 
-        Petugas petugas = client.getDataByColumn(tablePetugas.toString(), columnMapping, "main", "petugasId",
-                petugasId, Petugas.class);
+        Petugas petugas = client.getDataByColumn(tablePetugas.toString(), columnMapping, "main",
+                "petugasId", petugasId, Petugas.class);
         return petugas.getPetugasId() != null ? petugas : null; // Jika ada data dengan nikPetugas yang sama
     }
 

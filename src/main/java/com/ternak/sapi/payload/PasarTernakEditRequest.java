@@ -6,19 +6,17 @@ import org.springframework.web.multipart.MultipartFile;
 import lombok.Data;
 
 @Data
-public class PasarTernakRequest {
+public class PasarTernakEditRequest {
     private String namaPasar;
-    private OpenHour [] openHours;
+    private String latitude;
+    private String longitude;    
     private String[] fungsiPasarHewan;
     private String[] hewanYangDijual;
-    private String idPasar;
-    private String latitude;
+    private OpenHour [] openHours;
     private MultipartFile[] filePath;
-    private String longitude;
     private String catatan;
     private String desa;
     private String kecamatan;
     private String kabupatenKota;
     private String provinsi;
-    private String petugasPencatat;
 }

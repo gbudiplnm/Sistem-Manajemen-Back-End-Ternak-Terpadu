@@ -1,8 +1,11 @@
 package com.ternak.sapi.security;
 
+import com.ternak.sapi.exception.ApiException;
 import com.ternak.sapi.exception.ResourceNotFoundException;
 import com.ternak.sapi.model.User;
 import com.ternak.sapi.repository.UserRepository;
+
+import org.eclipse.jetty.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -28,10 +31,11 @@ public class CustomUserDetailsService implements UserDetailsService {
         try {
             user = Optional.ofNullable(userRepository.findByUsername(username))
                     .orElseThrow(() ->
-                            new UsernameNotFoundException("User not found with username or email : " + username)
+                            new ApiException(HttpStatus.BAD_REQUEST_400,"User not found with username or email : " + username)
             );
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ApiException(HttpStatus.BAD_REQUEST_400,"User not found with username or email : " + username);
+
         }
 
         return UserPrincipal.create(user);

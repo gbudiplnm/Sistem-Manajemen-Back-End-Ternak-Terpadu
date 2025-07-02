@@ -95,7 +95,7 @@ public class PusatEvakuasiRepository {
             String a = columns.get(i);
             columnMapping.put(a, a);
         }
-        return client.getDataByColumn(tablePusatEvakuasi.toString(), columnMapping, id, "main", "idPusatEvakuasi",
+        return client.getDataByColumn(tablePusatEvakuasi.toString(), columnMapping,  "main", "idPusatEvakuasi",id,
                 PusatEvakuasi.class);
     }
 }

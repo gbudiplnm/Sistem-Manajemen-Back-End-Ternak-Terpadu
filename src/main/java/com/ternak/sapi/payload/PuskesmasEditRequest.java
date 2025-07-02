@@ -5,17 +5,15 @@ import org.springframework.web.multipart.MultipartFile;
 import lombok.Data;
 
 @Data
-public class PuskesmasRequest {
+public class PuskesmasEditRequest {
     private String namaPuskesmas;
     private String longitude;
     private String latitude;
     private String desa;
     private String kecamatan;
-    private String kabupatenKota;
-    private String provinsi;
     private String[] dataLayanan;
     private String keterangan;
+    private String kabupatenKota;
+    private String provinsi;
     private String catatan;
-    private MultipartFile[] filePath;
-    private String petugasPencatat;
 }

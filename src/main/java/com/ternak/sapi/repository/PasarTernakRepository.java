@@ -96,7 +96,7 @@ public class PasarTernakRepository {
             String a = columns.get(i);
             columnMapping.put(a, a);
         }
-        return client.getDataByColumn(tablePasarTernak.toString(), columnMapping, id, "main", "idPasarTernak",
+        return client.getDataByColumn(tablePasarTernak.toString(), columnMapping,  "main", "idPasarTernak",id,
                 PasarTernak.class);
     }
 }

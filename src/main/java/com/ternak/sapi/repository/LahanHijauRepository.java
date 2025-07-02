@@ -15,17 +15,18 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.TableName;
+import org.springframework.stereotype.Repository;
 
 /**
  *
  * @author MSI MODERN 15 B13M
  */
+@Repository
 public class LahanHijauRepository {
+
 
     Configuration conf = HBaseConfiguration.create();
     String tableName = "lahanHijauDev";
@@ -113,7 +114,7 @@ public class LahanHijauRepository {
             String a = columns.get(i);
             columnMapping.put(a, a);
         }
-        return client.getDataByColumn(tableLahanHijau.toString(), columnMapping, id, "main", "idLahanHijau",
+        return client.getDataByColumn(tableLahanHijau.toString(), columnMapping, "main", "idLahanHijau", id,
                 LahanHijau.class);
     }
 }

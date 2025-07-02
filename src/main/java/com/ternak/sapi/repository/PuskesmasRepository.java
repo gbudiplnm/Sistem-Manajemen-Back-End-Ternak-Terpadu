@@ -46,16 +46,16 @@ public class PuskesmasRepository {
         return client.getDataListByColumn(tablePuskesmas.toString(), columnMapping, "detail", "created_by", "Polinema", Puskesmas.class, size);
     }
 
-    public Puskesmas save(Puskesmas Puskesmas) throws IOException {
+    public Puskesmas save(Puskesmas puskesmas) throws IOException {
         HBaseCustomClient client = new HBaseCustomClient(conf);
 
-        String rowKey = Puskesmas.getIdPuskesmas();
+        String rowKey = puskesmas.getIdPuskesmas();
 
         TableName tablePuskesmas = TableName.valueOf(tableName);
         client.insertRecord(tablePuskesmas, rowKey, "main", "idPuskesmas", rowKey);
-        AppUtility.insertNonNullFields(Puskesmas, tablePuskesmas, rowKey, client);
+        AppUtility.insertNonNullFields(puskesmas, tablePuskesmas, rowKey, client);
         client.insertRecord(tablePuskesmas, rowKey, "detail", "created_by", "Polinema");
-        return Puskesmas;
+        return puskesmas;
     }
 
     public List<Puskesmas> saveBulkImport(List<Puskesmas> lahanList) throws IOException {
@@ -95,7 +95,7 @@ public class PuskesmasRepository {
             String a = columns.get(i);
             columnMapping.put(a, a);
         }
-        return client.getDataByColumn(tablePuskesmas.toString(), columnMapping, id, "main", "idPuskesmas",
+        return client.getDataByColumn(tablePuskesmas.toString(), columnMapping,  "main", "idPuskesmas",id,
                 Puskesmas.class);
     }
 }

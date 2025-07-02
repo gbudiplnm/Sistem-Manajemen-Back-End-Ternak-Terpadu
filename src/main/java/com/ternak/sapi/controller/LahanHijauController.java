@@ -2,9 +2,14 @@ package com.ternak.sapi.controller;
 
 import java.io.IOException;
 
+import javax.validation.Valid;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -13,10 +18,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.ternak.sapi.exception.ApiException;
 import com.ternak.sapi.exception.BadRequestException;
 import com.ternak.sapi.model.LahanHijau;
+import com.ternak.sapi.payload.LahanHijauEditRequest;
 import com.ternak.sapi.payload.LahanHijauRequest;
 import com.ternak.sapi.payload.PagedResponse;
 import com.ternak.sapi.payload.UserSummary;
@@ -25,15 +32,33 @@ import com.ternak.sapi.security.CurrentUser;
 import com.ternak.sapi.security.UserPrincipal;
 import com.ternak.sapi.service.LahanHijauService;
 import com.ternak.sapi.util.AppConstants;
+import com.ternak.sapi.util.AppUtility;
 import com.ternak.sapi.util.annotations.BodyField;
+
+import lombok.Data;
 
 @RestController
 @RequestMapping("/api/lahan-hijau")
 public class LahanHijauController {
-    private LahanHijauService lahanHijauService = new LahanHijauService();
+
+    @Autowired(required = true)
+    private LahanHijauService lahanHijauService;
 
     @Value("${TEST}")
     private String test;
+
+    @Data
+    private class CobaClass {
+        String nama;
+        String alamat;
+    }
+
+    
+    @PostMapping("/testt")
+    public String test(@RequestPart(required = false) CobaClass cobaClass) {
+        System.out.println(cobaClass);
+        return test;
+    }
 
     @GetMapping
     public PagedResponse<LahanHijau> getAllLahanHijauUser(@RequestParam(required = false) LahanHijauQuery query)
@@ -51,8 +76,20 @@ public class LahanHijauController {
         return this.lahanHijauService.getAllLahanHijau(query);
     }
 
+    @PostMapping(value = "/upload-file", consumes = "multipart/form-data")
+    public String[] uploadFile(@RequestPart("files") MultipartFile[] files,@RequestParam(required = false) String id) throws IOException {
+        AppUtility.isFileExtensionCorrect(files,"jpg","jpeg","png");
+        String[] paths = lahanHijauService.uploadFile(files,id);
+        return paths;
+    }
+
+    @DeleteMapping(value="/delete-file")
+    public boolean deleteFile(@RequestParam("path") String path,@RequestParam(required = false) String id) throws IOException {
+        return lahanHijauService.deleteFile(path,id);
+    }
+
     @PostMapping(value = "/petugas/create", consumes = "multipart/form-data")
-    public LahanHijau saveLahanHijau(@RequestPart(required = false) LahanHijauRequest lahanHijau) throws IOException {
+    public LahanHijau saveLahanHijau(@ModelAttribute LahanHijauRequest lahanHijau) throws IOException {
         return this.lahanHijauService.saveLahanHijauAdmin(lahanHijau);
     }
 
@@ -62,7 +99,7 @@ public class LahanHijauController {
         UserSummary user = new UserSummary(currentUser);
         String role = user.getRole();
         if (!role.equalsIgnoreCase("ROLE_PETUGAS")) {
-            throw new BadRequestException("Anda Tidak Memiliki Akses");
+            throw new ApiException(HttpStatus.FORBIDDEN, "Anda Tidak Memiliki Akses");
         }
         return this.lahanHijauService.terimaLahanHijauPetugas(id, user, catatan);
     }
@@ -78,8 +115,8 @@ public class LahanHijauController {
         return this.lahanHijauService.tolakLahanHijauPetugas(id, user, catatan);
     }
 
-    @PostMapping("/peternak/create")
-    public LahanHijau saveLahanHijauUser(@RequestBody(required = false) LahanHijauRequest lahanHijau)
+    @PostMapping(value = "/peternak/create", consumes = "multipart/form-data")
+    public LahanHijau saveLahanHijauUser(@ModelAttribute LahanHijauRequest lahanHijau)
             throws IOException {
         return this.lahanHijauService.saveLahanHijauUser(lahanHijau);
     }
@@ -89,9 +126,9 @@ public class LahanHijauController {
         return this.lahanHijauService.getLahanHijauById(id);
     }
 
-    @PutMapping("/admin/edit/{id}")
-    public LahanHijau updateLahanHijauAdmin(@RequestParam(required = false) String id,
-            @RequestBody(required = false) LahanHijauRequest lahanHijau) throws IOException {
+    @PutMapping("/petugas/edit/{id}")
+    public LahanHijau updateLahanHijauAdmin(@PathVariable(required = false) String id,
+            @Valid @ModelAttribute LahanHijauEditRequest lahanHijau) throws IOException {
         return this.lahanHijauService.updateLahanHijauAdmin(id, lahanHijau);
     }
 

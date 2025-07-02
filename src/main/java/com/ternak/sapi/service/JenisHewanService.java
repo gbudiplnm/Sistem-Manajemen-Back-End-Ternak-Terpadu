@@ -1,7 +1,6 @@
 package com.ternak.sapi.service;
 
 import com.ternak.sapi.exception.BadRequestException;
-import com.ternak.sapi.exception.ResourceNotFoundException;
 import com.ternak.sapi.model.Hewan;
 import com.ternak.sapi.model.Inseminasi;
 import com.ternak.sapi.model.JenisHewan;
@@ -18,7 +17,6 @@ import com.ternak.sapi.repository.KandangRepository;
 import com.ternak.sapi.repository.KelahiranRepository;
 import com.ternak.sapi.repository.PkbRepository;
 import com.ternak.sapi.util.AppConstants;
-import org.checkerframework.checker.units.qual.K;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,8 +53,14 @@ public class JenisHewanService {
             throw new IllegalArgumentException("Jenis Hewan sudah terdaftar!");
         }
 
+        String uuid = java.util.UUID.randomUUID().toString();
+
         JenisHewan jenishewan = new JenisHewan();
-        jenishewan.setIdJenisHewan(jenishewanRequest.getIdJenisHewan());
+        if (jenishewanRequest.getIdJenisHewan() == null) {
+            jenishewan.setIdJenisHewan(uuid);
+        } else {
+            jenishewan.setIdJenisHewan(jenishewanRequest.getIdJenisHewan());
+        }
         jenishewan.setJenis(jenishewanRequest.getJenis());
         jenishewan.setDeskripsi(jenishewanRequest.getDeskripsi());
         return jenishewanRepository.save(jenishewan);

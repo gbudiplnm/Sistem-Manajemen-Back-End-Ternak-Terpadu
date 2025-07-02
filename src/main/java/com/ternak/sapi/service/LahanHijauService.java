@@ -1,10 +1,14 @@
 package com.ternak.sapi.service;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.ternak.sapi.exception.ApiException;
@@ -13,6 +17,7 @@ import com.ternak.sapi.model.Peternak;
 import com.ternak.sapi.model.Petugas;
 import com.ternak.sapi.model.User;
 import com.ternak.sapi.payload.DefaultResponse;
+import com.ternak.sapi.payload.LahanHijauEditRequest;
 import com.ternak.sapi.payload.LahanHijauRequest;
 import com.ternak.sapi.payload.PagedResponse;
 import com.ternak.sapi.payload.UserSummary;
@@ -22,12 +27,30 @@ import com.ternak.sapi.util.AppUtility;
 
 import enums.LahanStatus;
 
+@Service
 public class LahanHijauService {
-    private LahanHijauRepository lahanHijauRepository = new LahanHijauRepository();
-    private PeternakService peternakService = new PeternakService();
-    private PetugasService petugasService = new PetugasService();
-    private UserService userService = new UserService();
-    private HadoopFileService hadoopFileService = new HadoopFileService();
+
+
+    private final LahanHijauRepository lahanHijauRepository;
+    private final PeternakService peternakService;
+    private final PetugasService petugasService;
+    private final UserService userService;
+    private final HadoopFileService hadoopFileService;
+
+    @Autowired(required = true)
+    public LahanHijauService(
+            LahanHijauRepository lahanHijauRepository,
+            PeternakService peternakService,
+            PetugasService petugasService,
+            UserService userService,
+            HadoopFileService hadoopFileService
+    ) {
+        this.lahanHijauRepository = lahanHijauRepository;
+        this.peternakService = peternakService;
+        this.petugasService = petugasService;
+        this.userService = userService;
+        this.hadoopFileService = hadoopFileService;
+    }
 
     public PagedResponse<LahanHijau> getAllLahanHijau(LahanHijauQuery query) throws IOException {
         AppUtility.validatePageNumberAndSize(query.getPage(), query.getSize());
@@ -44,49 +67,66 @@ public class LahanHijauService {
     public LahanHijau saveLahanHijauAdmin(LahanHijauRequest lahanHijau) throws IOException {
         String idLahan = java.util.UUID.randomUUID().toString();
         DefaultResponse<Petugas> petugas = petugasService.getPetugasById(lahanHijau.getPetugasInput());
-        String[] path = new String[lahanHijau.getFilePath().length];
-        int i = 0;
+        List<String> pathLists = new java.util.ArrayList<>();
         for (MultipartFile file : lahanHijau.getFilePath()) {
             String idGambar = java.util.UUID.randomUUID().toString();
-            String filePath = hadoopFileService.uploadFile(idGambar, file, "puskesmas");
-            path[i] = filePath;
-            i++;
+            String filePath = hadoopFileService.uploadFile(idGambar, file, "lahan-hijau");
+            pathLists.add(filePath);
         }
-        LahanHijau lHijau = new LahanHijau.Builder(lahanHijau.getLongitude(), lahanHijau.getLatitude())
-        .provinsi(lahanHijau.getProvinsi()).kabupatenKota(lahanHijau.getKabupatenKota())
-        .kecamatan(lahanHijau.getKecamatan()).desa(lahanHijau.getDesa())
-        .catatan(lahanHijau.getCatatan()).luasLahan(lahanHijau.getLuasLahan())
-        .build();
-        lHijau.setIdLahan(idLahan);
-        lHijau.setFilePath(path);
-        lHijau.setStatusLahan(LahanStatus.DITERIMA);
-        lHijau.setPetugasInput(petugas.getContent());
-        lHijau.setPetugasReview(petugas.getContent());
-        LahanHijau lahanHijauSave = lahanHijauRepository.save(lHijau);
-        return lahanHijauSave;
+        String[] path = Arrays.copyOf(pathLists.toArray(), pathLists.size(), String[].class);
+        try {
+            LahanHijau lHijau = new LahanHijau.Builder(lahanHijau.getLatitude(), lahanHijau.getLongitude())
+                    .provinsi(lahanHijau.getProvinsi()).kabupatenKota(lahanHijau.getKabupatenKota())
+                    .kecamatan(lahanHijau.getKecamatan()).desa(lahanHijau.getDesa())
+                    .catatan(lahanHijau.getCatatan()).luasLahan(lahanHijau.getLuasLahan())
+                    .jenisHewan(lahanHijau.getJenisHewan())
+                    .namaLahanHijau(lahanHijau.getNamaLahanHijau())
+                    .build();
+            lHijau.setIdLahan(idLahan);
+            lHijau.setFilePath(path);
+            lHijau.setStatusLahan(LahanStatus.DITERIMA);
+            lHijau.setPetugasInput(petugas.getContent());
+            lHijau.setPetugasReview(petugas.getContent());
+            LahanHijau lahanHijauSave = lahanHijauRepository.save(lHijau);
+            return lahanHijauSave;
+        } catch (Exception e) {
+            for (String filePath : path) {
+                hadoopFileService.deleteFile(filePath);
+            }
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Lahan Hijau Sudah Di Terima");
+        }
     }
 
     public LahanHijau saveLahanHijauUser(LahanHijauRequest lahanHijau) throws IOException {
         String idLahan = java.util.UUID.randomUUID().toString();
         DefaultResponse<Peternak> peternak = peternakService.getPeternakById(lahanHijau.getPeternakInput());
-        String[] path = new String[lahanHijau.getFilePath().length];
-        int i = 0;
+        List<String> pathLists = new java.util.ArrayList<>();
         for (MultipartFile file : lahanHijau.getFilePath()) {
             String idGambar = java.util.UUID.randomUUID().toString();
-            String filePath = hadoopFileService.uploadFile(idGambar, file, "puskesmas");
-            path[i] = filePath;
-            i++;
+            String filePath = hadoopFileService.uploadFile(idGambar, file, "lahan-hijau");
+            pathLists.add(filePath);
         }
-        LahanHijau lHijau = new LahanHijau.Builder(lahanHijau.getLongitude(), lahanHijau.getLatitude())
-                .provinsi(lahanHijau.getProvinsi()).kabupatenKota(lahanHijau.getKabupatenKota())
-                .kecamatan(lahanHijau.getKecamatan()).desa(lahanHijau.getDesa())
-                .catatan(lahanHijau.getCatatan()).luasLahan(lahanHijau.getLuasLahan())
-                .build();
-        lHijau.setIdLahan(idLahan);
-        lHijau.setFilePath(path);
-        lHijau.setPeternakInput(peternak.getContent());
-        LahanHijau lahanHijauSave = lahanHijauRepository.save(lHijau);
-        return lahanHijauSave;
+        String[] path = Arrays.copyOf(pathLists.toArray(), pathLists.size(), String[].class);
+        try {
+            LahanHijau lHijau = new LahanHijau.Builder(lahanHijau.getLatitude(), lahanHijau.getLongitude())
+                    .provinsi(lahanHijau.getProvinsi()).kabupatenKota(lahanHijau.getKabupatenKota())
+                    .kecamatan(lahanHijau.getKecamatan()).desa(lahanHijau.getDesa())
+                    .catatan(lahanHijau.getCatatan()).luasLahan(lahanHijau.getLuasLahan())
+                    .jenisHewan(lahanHijau.getJenisHewan())
+                    .namaLahanHijau(lahanHijau.getNamaLahanHijau())
+                    .build();
+            lHijau.setIdLahan(idLahan);
+            lHijau.setFilePath(path);
+            lHijau.setStatusLahan(LahanStatus.PENDING);
+            lHijau.setPeternakInput(peternak.getContent());
+            LahanHijau lahanHijauSave = lahanHijauRepository.save(lHijau);
+            return lahanHijauSave;
+        } catch (Exception e) {
+            for (String filePath : path) {
+                hadoopFileService.deleteFile(filePath);
+            }
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Lahan Hijau Sudah Di Terima");
+        }
     }
 
     public LahanHijau getLahanHijauById(String id) throws IOException {
@@ -94,22 +134,22 @@ public class LahanHijauService {
         return lahanHijau;
     }
 
-    public LahanHijau updateLahanHijauAdmin(String id, LahanHijauRequest lahanHijauRequest) throws IOException {
+    public LahanHijau updateLahanHijauAdmin(String id, LahanHijauEditRequest lahanHijauRequest) throws IOException {
         LahanHijau lahanHijau = lahanHijauRepository.findLahanHijauById(id);
-        Petugas petugasReview = petugasService.getPetugasById(lahanHijauRequest.getPetugasReview()).getContent();
         if (lahanHijau != null) {
+            lahanHijau.setJenisHewan(lahanHijauRequest.getJenisHewan());
             lahanHijau.setProvinsi(lahanHijauRequest.getProvinsi());
             lahanHijau.setKabupatenKota(lahanHijauRequest.getKabupatenKota());
             lahanHijau.setKecamatan(lahanHijauRequest.getKecamatan());
+            lahanHijau.setLongitude(lahanHijauRequest.getLongitude());
+            lahanHijau.setLatitude(lahanHijauRequest.getLatitude());
+            lahanHijau.setNamaLahanHijau(lahanHijauRequest.getNamaLahanHijau());
             lahanHijau.setDesa(lahanHijauRequest.getDesa());
             lahanHijau.setCatatan(lahanHijauRequest.getCatatan());
-            lahanHijau.setFilePath(lahanHijau.getFilePath());
-            lahanHijau.setStatusLahan(lahanHijauRequest.getStatusLahan());
+            lahanHijau.setLuasLahan(lahanHijauRequest.getLuasLahan());
             lahanHijauRepository.save(lahanHijau);
-            if (lahanHijau.getStatusLahan() == LahanStatus.PENDING) {
-                lahanHijau.setLuasLahan(lahanHijauRequest.getLuasLahan());
-                lahanHijau.setPetugasReview(petugasReview);
-            }
+        } else {
+            throw new ApiException(HttpStatus.NOT_FOUND, "Data Lahan Hijau Tidak Ditemukan");
         }
         return lahanHijau;
     }
@@ -117,7 +157,7 @@ public class LahanHijauService {
     public LahanHijau terimaLahanHijauPetugas(String id, UserSummary userSummary, String Catatan) throws IOException {
         LahanHijau lahanHijau = lahanHijauRepository.findLahanHijauById(id);
         if (lahanHijau.getStatusLahan() != LahanStatus.PENDING) {
-            throw new ApiException(HttpStatus.BAD_REQUEST,"Lahan Hijau Sudah Di Terima");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Lahan Hijau Sudah Di Terima");
         }
         ;
         User user = userService.getUserById(userSummary.getId());
@@ -134,7 +174,7 @@ public class LahanHijauService {
     public LahanHijau tolakLahanHijauPetugas(String id, UserSummary userSummary, String Catatan) throws IOException {
         LahanHijau lahanHijau = lahanHijauRepository.findLahanHijauById(id);
         if (lahanHijau.getStatusLahan() != LahanStatus.PENDING) {
-            throw new ApiException(HttpStatus.BAD_REQUEST,"Lahan Hijau Sudah Di Tolak");
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Lahan Hijau Sudah Di Tolak");
         }
         ;
         User user = userService.getUserById(userSummary.getId());
@@ -146,6 +186,50 @@ public class LahanHijauService {
             lahanHijauRepository.save(lahanHijau);
         }
         return lahanHijau;
+    }
+
+    public boolean deleteFile(String path, String id) throws IOException {
+        try {
+            LahanHijau lahanHijau = lahanHijauRepository.findLahanHijauById(id);
+            String[] oldPaths = lahanHijau.getFilePath();
+            String[] newPaths = new String[oldPaths.length - 1];
+            for (String string : oldPaths) {
+                if (!string.equalsIgnoreCase(path)) {
+                    newPaths[newPaths.length - newPaths.length] = string;
+                }
+            }
+            lahanHijau.setFilePath(newPaths);
+
+            lahanHijauRepository.save(lahanHijau);
+            return hadoopFileService.deleteFile(path);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new ApiException(HttpStatus.NOT_FOUND, "Data Lahan Hijau Tidak Ditemukan");
+        }
+    }
+
+    public String[] uploadFile(MultipartFile[] files, String id) throws IOException {
+        String[] paths = new String[files.length];
+        for (int i = 0; i < files.length; i++) {
+            String idGambar = java.util.UUID.randomUUID().toString();
+            String filePath = hadoopFileService.uploadFile(idGambar, files[i], "lahan-hijau");
+            paths[i] = filePath;
+        }
+        try {
+            LahanHijau lahanHijau = lahanHijauRepository.findLahanHijauById(id);
+            String[] oldPaths = lahanHijau.getFilePath();
+            String[] newPaths = new String[oldPaths.length + paths.length];
+            System.arraycopy(oldPaths, 0, newPaths, 0, oldPaths.length);
+            System.arraycopy(paths, 0, newPaths, oldPaths.length, paths.length);
+            lahanHijau.setFilePath(newPaths);
+            lahanHijauRepository.save(lahanHijau);
+        } catch (Exception e) {
+            for (String filePath : paths) {
+                hadoopFileService.deleteFile(filePath);
+            }
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Terjadi Kesalahan");
+        }
+        return paths;
     }
 
 }

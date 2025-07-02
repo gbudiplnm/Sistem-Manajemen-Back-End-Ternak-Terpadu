@@ -25,9 +25,11 @@ import com.ternak.sapi.model.User;
 import com.ternak.sapi.repository.UserRepository;
 import com.ternak.sapi.util.AppConstants;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
+@Service
 public class UserService {
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();

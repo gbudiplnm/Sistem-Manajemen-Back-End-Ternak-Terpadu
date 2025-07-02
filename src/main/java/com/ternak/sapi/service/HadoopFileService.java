@@ -1,12 +1,22 @@
 package com.ternak.sapi.service;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+
+import javax.annotation.PostConstruct;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IOUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -14,6 +24,52 @@ import com.ternak.sapi.config.PathConfig;
 
 @Service
 public class HadoopFileService {
+
+    @Value("${hdfs.base.url}")
+    private String basePath;
+
+    public boolean deleteFile(String fileName) {
+        String uri = basePath + "/" + fileName;
+        Configuration configuration = new Configuration();
+        try {
+            FileSystem fs = FileSystem.get(URI.create(uri), configuration);
+            Path filePath = new Path(uri);
+            return fs.delete(filePath, false);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public ResponseEntity<byte[]> getFileFromHDFS(String fileName) {
+        String uri = basePath + "/" + fileName;
+        Configuration configuration = new Configuration();
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        try {
+            FileSystem fs = FileSystem.get(URI.create(uri), configuration);
+            Path filePath = new Path(uri);
+
+            if (!fs.exists(filePath)) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+
+            InputStream inputStream = fs.open(filePath);
+            IOUtils.copyBytes(inputStream, outputStream, 4096, false);
+            inputStream.close();
+            fs.close();
+
+            byte[] fileBytes = outputStream.toByteArray();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.IMAGE_JPEG);
+            headers.setContentLength(fileBytes.length);
+
+            return new ResponseEntity<>(fileBytes, headers, HttpStatus.OK);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 
     public String uploadFile(String id, MultipartFile file, String prefix) throws IOException {
         try {
@@ -48,7 +104,7 @@ public class HadoopFileService {
             Configuration configuration = new Configuration();
             FileSystem fs = FileSystem.get(URI.create(uri), configuration);
             fs.copyFromLocalFile(new Path(localPath), new Path(hdfsDir));
-            String savePath = "file/" + prefix + "/"+ newFileName + fileExtension;
+            String savePath = "file/" + prefix + "/" + newFileName + fileExtension;
 
             newFile.delete();
             return savePath;

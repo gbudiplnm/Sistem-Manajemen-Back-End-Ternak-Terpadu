@@ -171,42 +171,38 @@ public class AppUtility {
                             if (value.getClass().isArray()) {
                                 int length = Array.getLength(value);
                                 List<Object> elements = new ArrayList<>();
-
+                            
                                 for (int i = 0; i < length; i++) {
                                     Object element = Array.get(value, i);
-                                    if (element != null && isSimpleType(element.getClass())) {
-                                        elements.add(getSimpleValue(element));
+                                    if (element != null) {
+                                        elements.add(element); // Allow all types
                                     }
                                 }
-
+                            
                                 try {
-                                    // Serialize the list to JSON
                                     String json = objectMapper.writeValueAsString(elements);
-
-                                    // Store under a single column
                                     client.insertRecord(tableName, rowKey, "detail", fieldName, json);
                                 } catch (Exception e) {
                                     e.printStackTrace(); // Handle serialization error
                                 }
+                            
                             } else if (value instanceof Iterable) {
                                 List<Object> elements = new ArrayList<>();
+                            
                                 for (Object element : (Iterable<?>) value) {
-                                    if (element != null && isSimpleType(element.getClass())) {
-                                        elements.add(getSimpleValue(element));
+                                    if (element != null) {
+                                        elements.add(element); // Allow all types
                                     }
                                 }
-
+                            
                                 try {
-                                    // Serialize the list to JSON
                                     String json = objectMapper.writeValueAsString(elements);
-
-                                    // Store under a single column
                                     client.insertRecord(tableName, rowKey, "detail", fieldName, json);
                                 } catch (Exception e) {
                                     e.printStackTrace(); // Handle serialization error
                                 }
                             }
-
+                            
                         } else if (isSimpleType(value.getClass())) {
                             // Direct simple field, including enums
                             String stringValue = safeString(

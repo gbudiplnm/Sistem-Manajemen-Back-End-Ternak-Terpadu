@@ -41,8 +41,10 @@ public class PusatEvakuasiService {
         }
         String[] path = Arrays.copyOf(pathLists.toArray(), pathLists.size(), String[].class);
         PusatEvakuasi pusatEvakuasi = new PusatEvakuasi.Builder(pusatEvakuasiRequest.getLongitude(),
-                pusatEvakuasiRequest.getLatitude()).desa(pusatEvakuasiRequest.getDesa()).kecamatan(pusatEvakuasiRequest.getKecamatan())
-                .kabupatenKota(pusatEvakuasiRequest.getKabupatenKota()).provinsi(pusatEvakuasiRequest.getProvinsi()).namaPusatEvakuasi(pusatEvakuasiRequest.getNamaPusatEvakuasi())
+                pusatEvakuasiRequest.getLatitude()).desa(pusatEvakuasiRequest.getDesa())
+                .kecamatan(pusatEvakuasiRequest.getKecamatan())
+                .kabupatenKota(pusatEvakuasiRequest.getKabupatenKota()).provinsi(pusatEvakuasiRequest.getProvinsi())
+                .namaPusatEvakuasi(pusatEvakuasiRequest.getNamaPusatEvakuasi())
                 .catatan(pusatEvakuasiRequest.getCatatan())
                 .tempatEvakuasiBencana(pusatEvakuasiRequest.getTempatEvakuasiBencana())
                 .jenisBencana(pusatEvakuasiRequest.getJenisBencana())
@@ -63,18 +65,42 @@ public class PusatEvakuasiService {
             throws IOException {
         PusatEvakuasi pusatEvakuasi = pusatEvakuasiRepository.findPusatEvakuasiById(id);
         if (pusatEvakuasi != null) {
-            pusatEvakuasi.setLatitude(pusatEvakuasiRequest.getLatitude());
-            pusatEvakuasi.setLongitude(pusatEvakuasiRequest.getLongitude());
-            pusatEvakuasi.setDesa(pusatEvakuasiRequest.getDesa());
-            pusatEvakuasi.setKecamatan(pusatEvakuasiRequest.getKecamatan());
-            pusatEvakuasi.setKabupatenKota(pusatEvakuasiRequest.getKabupatenKota());
-            pusatEvakuasi.setProvinsi(pusatEvakuasiRequest.getProvinsi());
-            pusatEvakuasi.setNamaPusatEvakuasi(pusatEvakuasiRequest.getNamaPusatEvakuasi());
-            pusatEvakuasi.setCatatan(pusatEvakuasiRequest.getCatatan());
-            pusatEvakuasi.setTempatEvakuasiBencana(pusatEvakuasiRequest.getTempatEvakuasiBencana());
-            pusatEvakuasi.setJenisBencana(pusatEvakuasiRequest.getJenisBencana());
-            pusatEvakuasi.setPetaEvakuasi(pusatEvakuasiRequest.getPetaEvakuasi());
-            pusatEvakuasi.setJalurEvakuasi(pusatEvakuasiRequest.getJalurEvakuasi());
+            if (pusatEvakuasiRequest.getLatitude() != null) {
+                pusatEvakuasi.setLatitude(pusatEvakuasiRequest.getLatitude());
+            }
+            if (pusatEvakuasiRequest.getLongitude() != null) {
+                pusatEvakuasi.setLongitude(pusatEvakuasiRequest.getLongitude());
+            }
+            if (pusatEvakuasiRequest.getDesa() != null) {
+                pusatEvakuasi.setDesa(pusatEvakuasiRequest.getDesa());
+            }
+            if (pusatEvakuasiRequest.getKecamatan() != null) {
+                pusatEvakuasi.setKecamatan(pusatEvakuasiRequest.getKecamatan());
+            }
+            if (pusatEvakuasiRequest.getKabupatenKota() != null) {
+                pusatEvakuasi.setKabupatenKota(pusatEvakuasiRequest.getKabupatenKota());
+            }
+            if (pusatEvakuasiRequest.getProvinsi() != null) {
+                pusatEvakuasi.setProvinsi(pusatEvakuasiRequest.getProvinsi());
+            }
+            if (pusatEvakuasiRequest.getNamaPusatEvakuasi() != null) {
+                pusatEvakuasi.setNamaPusatEvakuasi(pusatEvakuasiRequest.getNamaPusatEvakuasi());
+            }
+            if (pusatEvakuasiRequest.getCatatan() != null) {
+                pusatEvakuasi.setCatatan(pusatEvakuasiRequest.getCatatan());
+            }
+            if (pusatEvakuasiRequest.getTempatEvakuasiBencana() != null) {
+                pusatEvakuasi.setTempatEvakuasiBencana(pusatEvakuasiRequest.getTempatEvakuasiBencana());
+            }
+            if (pusatEvakuasiRequest.getJenisBencana() != null) {
+                pusatEvakuasi.setJenisBencana(pusatEvakuasiRequest.getJenisBencana());
+            }
+            if (pusatEvakuasiRequest.getPetaEvakuasi() != null) {
+                pusatEvakuasi.setPetaEvakuasi(pusatEvakuasiRequest.getPetaEvakuasi());
+            }
+            if (pusatEvakuasiRequest.getJalurEvakuasi() != null) {
+                pusatEvakuasi.setJalurEvakuasi(pusatEvakuasiRequest.getJalurEvakuasi());
+            }
         } else {
             throw new ApiException(HttpStatus.NOT_FOUND, "Data Pusat Evakuasi Tidak Ditemukan");
         }
@@ -82,7 +108,6 @@ public class PusatEvakuasiService {
         return pusatEvakuasiUpdated;
     }
 
-       
     public boolean deleteFile(String path, String id) throws IOException {
         try {
             PusatEvakuasi pusatEvakuasi = pusatEvakuasiRepository.findPusatEvakuasiById(id);

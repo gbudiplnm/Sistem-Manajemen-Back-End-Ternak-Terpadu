@@ -41,6 +41,19 @@ public class HadoopFileService {
         }
     }
 
+    public boolean[] deleteFiles(String[] fileNames) {
+        boolean[] results = new boolean[fileNames.length];
+        for (int i = 0; i < fileNames.length; i++) {
+            try {
+                results[i] = deleteFile(fileNames[i]);
+            } catch (Exception e) {
+                e.printStackTrace();
+                results[i] = false;
+            }
+        }
+        return results;
+    }
+
     public ResponseEntity<byte[]> getFileFromHDFS(String fileName) {
         String uri = basePath + "/" + fileName;
         Configuration configuration = new Configuration();

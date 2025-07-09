@@ -7,7 +7,7 @@ import javax.validation.constraints.NotBlank;
 import org.springframework.web.multipart.MultipartFile;
 
 import enums.JenisHewanEnum;
-import enums.LahanStatus;
+import enums.KepemilikanEnum;
 
 @Data
 public class LahanHijauRequest {
@@ -23,12 +23,11 @@ public class LahanHijauRequest {
     private String longitude;
     @NotBlank(message = "filePath is required")
     private MultipartFile[] filePath;
-    @NotBlank(message = "petugasInput is required")
     private String petugasInput;
-    @NotBlank(message = "peternakInput is required")
     private String peternakInput;
-    @NotBlank(message = "petugasReview is required")
     private String petugasReview;
+    @NotBlank(message = "kepemilikan is required")
+    private KepemilikanEnum kepemilikan;
     @NotBlank(message = "kecamatan is required")
     private String kecamatan;
     @NotBlank(message = "desa is required")

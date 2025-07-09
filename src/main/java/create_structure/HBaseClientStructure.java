@@ -165,7 +165,7 @@ public class HBaseClientStructure {
                 client.insertRecord(tableUser, "USR001", "main", "role", "1");
                 // client.insertRecord(tableUser, "USR001", "main", "createdAt",
                 // "2024-05-14T04:56:23.174Z");
-                client.insertRecord(tableUser, "USR001", "detail", "createdAt", "Senja007");
+                client.insertRecord(tableUser, "USR001", "detail", "createdAt", "2025-05-12T23:43:31.260Z");
 
                 client.insertRecord(tableUser, "USR002", "main", "petugasId", "USR002");
                 client.insertRecord(tableUser, "USR002", "main", "name", "petugas");
@@ -176,7 +176,7 @@ public class HBaseClientStructure {
                 client.insertRecord(tableUser, "USR002", "main", "role", "2");
                 // client.insertRecord(tableUser, "USR002", "main", "createdAt",
                 // "2024-05-14T04:56:23.174Z");
-                client.insertRecord(tableUser, "USR002", "detail", "createdAt", "Senja007");
+                client.insertRecord(tableUser, "USR002", "detail", "createdAt", "2025-05-12T23:43:31.260Z");
 
                 client.insertRecord(tableUser, "USR003", "main", "id", "USR003");
                 client.insertRecord(tableUser, "USR003", "main", "name", "peternak");
@@ -187,7 +187,7 @@ public class HBaseClientStructure {
                 client.insertRecord(tableUser, "USR003", "main", "role", "3");
                 // client.insertRecord(tableUser, "USR003", "main", "createdAt",
                 // "2024-05-14T04:56:23.174Z");
-                client.insertRecord(tableUser, "USR003", "detail", "createdAt", "Senja007");
+                client.insertRecord(tableUser, "USR003", "detail", "createdAt", "2025-05-12T23:43:31.260Z");
 
         }
 }

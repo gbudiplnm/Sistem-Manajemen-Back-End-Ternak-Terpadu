@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import enums.JenisHewanEnum;
 import enums.LahanStatus;
+import enums.KepemilikanEnum;
 import lombok.Data;
 
 import java.util.List;
@@ -23,6 +24,7 @@ public class LahanHijau {
     private String idLahan;
     
     private String luasLahan;
+    private KepemilikanEnum kepemilikan;
     private String namaLahanHijau;
     private JenisHewanEnum jenisHewan;
     private String latitude;
@@ -49,6 +51,7 @@ public class LahanHijau {
     
     public static class Builder{
         private final String latitude;
+        private KepemilikanEnum kepemilikan = KepemilikanEnum.UMUM;
         private final String longitude;
         private String kecamatan = "";
         private String namaLahanHijau = "";
@@ -62,6 +65,11 @@ public class LahanHijau {
         public Builder(String latitude, String longitude){
             this.latitude = latitude;
             this.longitude = longitude;
+        }
+
+        public Builder kepemilikan(KepemilikanEnum kepemilikan){
+            this.kepemilikan = kepemilikan;
+            return this;
         }
 
         public Builder namaLahanHijau(String namaLahanHijau){
@@ -116,6 +124,7 @@ public class LahanHijau {
         this.catatan = builder.catatan;
         this.latitude = builder.latitude;
         this.longitude = builder.longitude;
+        this.kepemilikan = builder.kepemilikan;
         this.luasLahan = builder.luasLahan;
         this.statusLahan = builder.statusLahan;
         this.kecamatan = builder.kecamatan;

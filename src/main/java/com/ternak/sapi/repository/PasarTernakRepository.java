@@ -53,7 +53,7 @@ public class PasarTernakRepository {
         String rowKey = PasarTernak.getIdPasar();
 
         TableName tablePasarTernak = TableName.valueOf(tableName);
-        client.insertRecord(tablePasarTernak, rowKey, "main", "idPasarTernak", rowKey);
+        client.insertRecord(tablePasarTernak, rowKey, "main", "idPasar", rowKey);
         AppUtility.insertNonNullFields(PasarTernak, tablePasarTernak, rowKey, client);
         client.insertRecord(tablePasarTernak, rowKey, "detail", "created_by", "Polinema");
         return PasarTernak;
@@ -96,7 +96,7 @@ public class PasarTernakRepository {
             String a = columns.get(i);
             columnMapping.put(a, a);
         }
-        return client.getDataByColumn(tablePasarTernak.toString(), columnMapping,  "main", "idPasarTernak",id,
+        return client.getDataByColumn(tablePasarTernak.toString(), columnMapping,  "main", "idPasar",id,
                 PasarTernak.class);
     }
 }

@@ -65,16 +65,36 @@ public class PuskesmasService {
     public Puskesmas updatePuskesmas(String id, PuskesmasEditRequest puskesmasRequest) throws IOException {
         Puskesmas puskesmas = puskesmasRepository.findPuskesmasById(id);
         if (puskesmas != null) {
-            puskesmas.setNamaPuskesmas(puskesmasRequest.getNamaPuskesmas());
-            puskesmas.setLongitude(puskesmasRequest.getLongitude());
-            puskesmas.setLatitude(puskesmasRequest.getLatitude());
-            puskesmas.setDesa(puskesmasRequest.getDesa());
-            puskesmas.setKecamatan(puskesmasRequest.getKecamatan());
-            puskesmas.setKabupatenKota(puskesmasRequest.getKabupatenKota());
-            puskesmas.setProvinsi(puskesmasRequest.getProvinsi());
-            puskesmas.setCatatan(puskesmasRequest.getCatatan());
-            puskesmas.setKeterangan(puskesmasRequest.getKeterangan());
-            puskesmas.setDataLayanan(puskesmasRequest.getDataLayanan());
+            if (puskesmasRequest.getNamaPuskesmas() != null) {
+                puskesmas.setNamaPuskesmas(puskesmasRequest.getNamaPuskesmas());
+            }
+            if (puskesmasRequest.getLongitude() != null) {
+                puskesmas.setLongitude(puskesmasRequest.getLongitude());
+            }
+            if (puskesmasRequest.getLatitude() != null) {
+                puskesmas.setLatitude(puskesmasRequest.getLatitude());
+            }
+            if (puskesmasRequest.getDesa() != null) {
+                puskesmas.setDesa(puskesmasRequest.getDesa());
+            }
+            if (puskesmasRequest.getKecamatan() != null) {
+                puskesmas.setKecamatan(puskesmasRequest.getKecamatan());
+            }
+            if (puskesmasRequest.getKabupatenKota() != null) {
+                puskesmas.setKabupatenKota(puskesmasRequest.getKabupatenKota());
+            }
+            if (puskesmasRequest.getProvinsi() != null) {
+                puskesmas.setProvinsi(puskesmasRequest.getProvinsi());
+            }
+            if (puskesmasRequest.getCatatan() != null) {
+                puskesmas.setCatatan(puskesmasRequest.getCatatan());
+            }
+            if (puskesmasRequest.getKeterangan() != null) {
+                puskesmas.setKeterangan(puskesmasRequest.getKeterangan());
+            }
+            if (puskesmasRequest.getDataLayanan() != null) {
+                puskesmas.setDataLayanan(puskesmasRequest.getDataLayanan());
+            }
         } else {
             throw new ApiException(HttpStatus.NOT_FOUND, "Data Puskesmas Tidak Ditemukan");
         }
@@ -82,7 +102,6 @@ public class PuskesmasService {
         return puskesmasUpdated;
     }
 
-       
     public boolean deleteFile(String path, String id) throws IOException {
         try {
             Puskesmas puskesmas = puskesmasRepository.findPuskesmasById(id);

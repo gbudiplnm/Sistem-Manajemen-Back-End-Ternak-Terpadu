@@ -11,16 +11,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.ternak.sapi.exception.ResourceNotFoundException;
-import com.ternak.sapi.model.Peternak;
 import com.ternak.sapi.payload.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-
 import com.ternak.sapi.exception.BadRequestException;
-import com.ternak.sapi.model.RumpunHewan;
 import com.ternak.sapi.model.User;
 import com.ternak.sapi.repository.UserRepository;
 import com.ternak.sapi.util.AppConstants;

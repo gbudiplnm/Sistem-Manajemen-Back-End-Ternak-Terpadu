@@ -31,7 +31,8 @@ public class PasarTernakService {
     }
 
     public PasarTernak savePasarTernak(PasarTernakRequest pasarTernakRequest) throws IOException {
-        boolean isAllFileHasCorrectExtension = AppUtility.isFileExtensionCorrect(pasarTernakRequest.getFilePath(), "jpg", "jpeg", "png");
+        boolean isAllFileHasCorrectExtension = AppUtility.isFileExtensionCorrect(pasarTernakRequest.getFilePath(),
+                "jpg", "jpeg", "png");
         if (!isAllFileHasCorrectExtension) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "File Tidak Sesuai, Hanya file gambar yang diizinkan");
         }
@@ -45,7 +46,8 @@ public class PasarTernakService {
         }
         String[] pathLists = Arrays.copyOf(path.toArray(), path.size(), String[].class);
         PasarTernak pasarTernak = new PasarTernak.Builder(pasarTernakRequest.getLatitude(),
-                pasarTernakRequest.getLongitude()).desa(pasarTernakRequest.getDesa()).kabupatenKota(pasarTernakRequest.getKabupatenKota())
+                pasarTernakRequest.getLongitude()).desa(pasarTernakRequest.getDesa())
+                .kabupatenKota(pasarTernakRequest.getKabupatenKota())
                 .kecamatan(pasarTernakRequest.getKecamatan()).provinsi(pasarTernakRequest.getProvinsi())
                 .namaPasar(pasarTernakRequest.getNamaPasar())
                 .openHours(pasarTernakRequest.getOpenHours()).fungsiPasarHewan(pasarTernakRequest.getFungsiPasarHewan())
@@ -66,17 +68,39 @@ public class PasarTernakService {
     public PasarTernak updatePasarTernak(String id, PasarTernakEditRequest pasarTernakRequest) throws IOException {
         PasarTernak pasarTernak = pasarTernakRepository.findPasarTernakById(id);
         if (pasarTernak != null) {
-            pasarTernak.setNamaPasar(pasarTernakRequest.getNamaPasar());
-            pasarTernak.setLongitude(pasarTernakRequest.getLongitude());
-            pasarTernak.setLatitude(pasarTernakRequest.getLatitude());
-            pasarTernak.setDesa(pasarTernakRequest.getDesa());
-            pasarTernak.setOpenHours(pasarTernakRequest.getOpenHours());
-            pasarTernak.setFungsiPasarHewan(pasarTernakRequest.getFungsiPasarHewan());
-            pasarTernak.setHewanYangDijual(pasarTernakRequest.getHewanYangDijual());
-            pasarTernak.setKecamatan(pasarTernakRequest.getKecamatan());
-            pasarTernak.setKabupatenKota(pasarTernakRequest.getKabupatenKota());
-            pasarTernak.setProvinsi(pasarTernakRequest.getProvinsi());
-            pasarTernak.setCatatan(pasarTernakRequest.getCatatan());
+            if (pasarTernakRequest.getNamaPasar() != null) {
+                pasarTernak.setNamaPasar(pasarTernakRequest.getNamaPasar());
+            }
+            if (pasarTernakRequest.getLongitude() != null) {
+                pasarTernak.setLongitude(pasarTernakRequest.getLongitude());
+            }
+            if (pasarTernakRequest.getLatitude() != null) {
+                pasarTernak.setLatitude(pasarTernakRequest.getLatitude());
+            }
+            if (pasarTernakRequest.getDesa() != null) {
+                pasarTernak.setDesa(pasarTernakRequest.getDesa());
+            }
+            if (pasarTernakRequest.getOpenHours() != null) {
+                pasarTernak.setOpenHours(pasarTernakRequest.getOpenHours());
+            }
+            if (pasarTernakRequest.getFungsiPasarHewan() != null) {
+                pasarTernak.setFungsiPasarHewan(pasarTernakRequest.getFungsiPasarHewan());
+            }
+            if (pasarTernakRequest.getHewanYangDijual() != null) {
+                pasarTernak.setHewanYangDijual(pasarTernakRequest.getHewanYangDijual());
+            }
+            if (pasarTernakRequest.getKecamatan() != null) {
+                pasarTernak.setKecamatan(pasarTernakRequest.getKecamatan());
+            }
+            if (pasarTernakRequest.getKabupatenKota() != null) {
+                pasarTernak.setKabupatenKota(pasarTernakRequest.getKabupatenKota());
+            }
+            if (pasarTernakRequest.getProvinsi() != null) {
+                pasarTernak.setProvinsi(pasarTernakRequest.getProvinsi());
+            }
+            if (pasarTernakRequest.getCatatan() != null) {
+                pasarTernak.setCatatan(pasarTernakRequest.getCatatan());
+            }
         } else {
             throw new ApiException(HttpStatus.NOT_FOUND, "Data Pasar Ternak Tidak Ditemukan");
         }
@@ -84,7 +108,6 @@ public class PasarTernakService {
         return pasarTernakUpdated;
     }
 
-    
     public boolean deleteFile(String path, String id) throws IOException {
         try {
             PasarTernak pasarTernak = pasarTernakRepository.findPasarTernakById(id);

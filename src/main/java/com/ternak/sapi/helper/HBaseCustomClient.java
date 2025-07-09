@@ -18,6 +18,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -216,25 +217,48 @@ public class HBaseCustomClient {
                         }
 
                         if (familyObject instanceof List) {
-                            Object currentObject = familyObject;
+                            List targetList = (List) familyObject;
                             ObjectMapper mapper = new ObjectMapper();
 
-                            JsonNode jsonNode = null;
                             try {
-                                jsonNode = mapper.readTree((String) value);
+                                JsonNode jsonNode = mapper.readTree((String) value);
+
+                                if (jsonNode.isArray()) {
+                                    // Try to detect target generic type
+                                    Field listField = object.getClass().getDeclaredField(familyName);
+                                    Class<?> listItemType = Object.class;
+
+                                    if (listField.getGenericType() instanceof ParameterizedType) {
+                                        ParameterizedType listType = (ParameterizedType) listField.getGenericType();
+                                        listItemType = (Class<?>) listType.getActualTypeArguments()[0];
+                                    }
+
+                                    for (JsonNode itemNode : jsonNode) {
+                                        if (itemNode.isObject()) {
+                                            Object item = mapper.treeToValue(itemNode, listItemType);
+                                            targetList.add(item);
+                                        } else if (itemNode.isValueNode()) {
+                                            targetList.add(mapper.treeToValue(itemNode, String.class));
+                                        }
+                                    }
+
+                                } else if (jsonNode.isObject()) {
+                                    // Handle single map-like object
+                                    Map<String, Object> singleMap = mapper.convertValue(jsonNode,
+                                            new TypeReference<Map<String, Object>>() {
+                                            });
+                                    targetList.add(singleMap);
+                                } else {
+                                    // Fallback: plain string
+                                    targetList.add(value);
+                                }
+
                             } catch (Exception e) {
-                                // Not JSON formatted
+                                e.printStackTrace();
+                                // fallback
+                                targetList.add(value);
                             }
 
-                            if (jsonNode != null
-                                    && jsonNode.getNodeType() == JsonNodeFactory.instance.objectNode().getNodeType()) {
-                                Map<String, Object> dataList = mapper.readValue((String) value,
-                                        new TypeReference<Map<String, Object>>() {
-                                        });
-                                ((List) currentObject).add(dataList);
-                            } else {
-                                ((List) currentObject).add(value);
-                            }
                         } else {
                             Field subField = familyObject.getClass().getDeclaredField(subFieldName);
                             subField.setAccessible(true);
@@ -257,19 +281,41 @@ public class HBaseCustomClient {
                                 Class<?> componentType = field.getType().getComponentType();
                                 ObjectMapper objectMapper = new ObjectMapper();
 
-                                // Prepare the list to hold existing + new elements
-                                List<Object> list = objectMapper.readValue(value, new TypeReference<List<Object>>(){});
+                                try {
+                                    // Step 1: Read value into JsonNode to inspect
+                                    JsonNode rootNode = objectMapper.readTree(value);
 
-                                // If the current array is not null, copy elements into the list
+                                    // Step 2: Deserialize into a list of proper componentType
+                                    List<Object> list = new ArrayList<>();
 
-                                // Convert the list back into a new array
-                                Object newArray = Array.newInstance(componentType, list.size());
-                                for (int i = 0; i < list.size(); i++) {
-                                    Array.set(newArray, i, list.get(i));
+                                    if (rootNode.isArray()) {
+                                        for (JsonNode itemNode : rootNode) {
+                                            if (componentType == String.class || componentType.isPrimitive()
+                                                    || isWrapperType(componentType)) {
+                                                // Simple value types
+                                                Object simpleValue = objectMapper.treeToValue(itemNode, componentType);
+                                                list.add(simpleValue);
+                                            } else {
+                                                // Complex object types
+                                                Object obj = objectMapper.treeToValue(itemNode, componentType);
+                                                list.add(obj);
+                                            }
+                                        }
+                                    }
+
+                                    // Step 3: Convert list to typed array
+                                    Object newArray = Array.newInstance(componentType, list.size());
+                                    for (int i = 0; i < list.size(); i++) {
+                                        Array.set(newArray, i, list.get(i));
+                                    }
+
+                                    // Step 4: Set into object
+                                    field.setAccessible(true);
+                                    field.set(object, newArray);
+
+                                } catch (Exception e) {
+                                    e.printStackTrace(); // Handle parse/instantiation error
                                 }
-
-                                // Set the new array back into the object
-                                field.set(object, newArray);
                             } else {
                                 setField(field, object, value);
                             }
@@ -291,6 +337,12 @@ public class HBaseCustomClient {
         }
 
         return null;
+    }
+
+    private static boolean isWrapperType(Class<?> clazz) {
+        return clazz == Boolean.class || clazz == Integer.class || clazz == Long.class ||
+                clazz == Double.class || clazz == Float.class || clazz == Short.class ||
+                clazz == Byte.class || clazz == Character.class;
     }
 
     public <T> T showDataTable(String tablename, Map<String, String> columnMapping, String uuid, Class<T> modelClass) {
@@ -390,6 +442,19 @@ public class HBaseCustomClient {
         return null;
     }
 
+    private boolean isSimpleType(Class<?> clazz) {
+        return clazz.isPrimitive()
+                || clazz == String.class
+                || clazz == Boolean.class
+                || clazz == Integer.class
+                || clazz == Long.class
+                || clazz == Double.class
+                || clazz == Float.class
+                || clazz == Short.class
+                || clazz == Byte.class
+                || clazz == Character.class;
+    }
+
     /**
      * Searches for a row containing a specific value in a given column,
      * then maps the first found row to an object.
@@ -411,176 +476,150 @@ public class HBaseCustomClient {
             String valueToSearchInColumn, Class<T> modelClass) {
         Table table = null;
         ResultScanner scanner = null;
+
         try {
             table = connection.getTable(TableName.valueOf(tableName));
-
             Scan scan = new Scan();
 
-            // Create a filter to find rows where the specified column has the specified
-            // value
+            // Filter: find row with specific column value
             SingleColumnValueFilter filter = new SingleColumnValueFilter(
                     Bytes.toBytes(searchColumnFamily),
                     Bytes.toBytes(searchColumnQualifier),
-                    CompareOp.EQUAL, // Or CompareOperator.EQUAL for newer HBase versions
+                    CompareOperator.EQUAL,
                     Bytes.toBytes(valueToSearchInColumn));
-            // Important: If a row doesn't have the specified column, by default it will be
-            // included.
-            // Set this to true to filter out rows that don't have the column.
             filter.setFilterIfMissing(true);
             scan.setFilter(filter);
 
-            // To ensure all data from the matched row is available for mapping,
-            // you can explicitly add all families from the table descriptor,
-            // similar to your original Get logic. This is often the default behavior
-            // for a scan on a matched row, but being explicit can be clearer.
-            TableDescriptor tableDescriptor = connection.getAdmin().getDescriptor(TableName.valueOf(tableName));
-            for (ColumnFamilyDescriptor familyDesc : tableDescriptor.getColumnFamilies()) {
-                scan.addFamily(familyDesc.getName());
+            // Scan all column families
+            TableDescriptor descriptor = connection.getAdmin().getDescriptor(TableName.valueOf(tableName));
+            for (ColumnFamilyDescriptor family : descriptor.getColumnFamilies()) {
+                scan.addFamily(family.getName());
             }
 
             scanner = table.getScanner(scan);
-            Result result = scanner.next(); // Get the first matching row
+            Result result = scanner.next();
 
-            if (result == null || result.isEmpty()) {
-                return null; // No row found matching the criteria
-            }
+            if (result == null || result.isEmpty())
+                return null;
 
-            // --- Object Mapping Logic (largely the same as your original method) ---
-            T object = modelClass.getDeclaredConstructor().newInstance(); // Use getDeclaredConstructor for broader
-                                                                          // compatibility
+            T object = modelClass.getDeclaredConstructor().newInstance();
+            ObjectMapper objectMapper = new ObjectMapper();
 
             for (Cell cell : result.listCells()) {
                 String familyName = Bytes.toString(CellUtil.cloneFamily(cell));
-                String hbaseColumnName = Bytes.toString(CellUtil.cloneQualifier(cell)); // Renamed for clarity
-                String cellValue = Bytes.toString(CellUtil.cloneValue(cell)); // Renamed for clarity
+                String qualifier = Bytes.toString(CellUtil.cloneQualifier(cell));
+                String cellValue = Bytes.toString(CellUtil.cloneValue(cell));
 
-                String fieldNameCandidate = hbaseColumnName;
-                int underscoreIndex = hbaseColumnName.indexOf("_");
-                if (underscoreIndex != -1) {
-                    // Basic parsing logic: assumes "name_1" -> "name"
-                    // You might need more robust parsing if formats vary
-                    fieldNameCandidate = hbaseColumnName.substring(0, underscoreIndex);
-                }
-                String targetFieldName = columnMapping.get(fieldNameCandidate);
-                // If no mapping for parsed name, try direct mapping for hbaseColumnName
-                if (targetFieldName == null) {
-                    targetFieldName = columnMapping.get(hbaseColumnName);
-                }
+                String baseField = qualifier.contains("_") ? qualifier.substring(0, qualifier.indexOf("_")) : qualifier;
+                String targetField = columnMapping.getOrDefault(baseField,
+                        columnMapping.getOrDefault(qualifier, qualifier));
+                String familyMapped = columnMapping.get(familyName);
 
-                // Check if the familyName itself is mapped to a complex field (e.g., a nested
-                // object or list)
-                String familyMappedFieldName = columnMapping.get(familyName);
-
-                if (familyMappedFieldName != null
-                        && object.getClass().getDeclaredField(familyMappedFieldName) != null) {
-                    // This logic handles cases where the column family name maps to a field in the
-                    // object,
-                    // and that field might be a List or another complex object.
-                    // The hbaseColumnName within this family would then map to a sub-field or an
-                    // element.
-                    Field familyField = object.getClass().getDeclaredField(familyMappedFieldName);
+                if (familyMapped != null) {
+                    Field familyField = modelClass.getDeclaredField(familyMapped);
                     familyField.setAccessible(true);
                     Object familyObject = familyField.get(object);
 
                     if (familyObject == null) {
-                        if (familyField.getType() == List.class) {
+                        if (List.class.isAssignableFrom(familyField.getType())) {
                             familyObject = new ArrayList<>();
-                            familyField.set(object, familyObject);
                         } else if (!familyField.getType().isPrimitive() && familyField.getType() != String.class) {
                             familyObject = familyField.getType().getDeclaredConstructor().newInstance();
-                            familyField.set(object, familyObject);
-                        } else {
-                            // If it's a primitive/String mapped by family name, this might be an issue
-                            // or needs specific handling. For now, assume complex type.
-                            System.err.println("Warning: Family '" + familyName + "' mapped to primitive/String field '"
-                                    + familyMappedFieldName + "'. Sub-column '" + hbaseColumnName
-                                    + "' might not be settable here.");
-                            continue;
                         }
+                        familyField.set(object, familyObject);
                     }
 
                     if (familyObject instanceof List) {
-                        List<Object> listObject = (List<Object>) familyObject;
-                        ObjectMapper mapper = new ObjectMapper();
-                        JsonNode jsonNode = null;
+                        List<Object> list = (List<Object>) familyObject;
+
+                        JsonNode node = null;
                         try {
-                            jsonNode = mapper.readTree(cellValue);
+                            node = objectMapper.readTree(cellValue);
                         } catch (Exception e) {
-                            // Not JSON, or malformed
+                            list.add(cellValue);
+                            continue;
                         }
 
-                        if (jsonNode != null && jsonNode.isObject()) {
-                            Map<String, Object> dataMap = mapper.readValue(cellValue,
-                                    new TypeReference<Map<String, Object>>() {
-                                    });
-                            listObject.add(dataMap);
+                        if (node.isArray()) {
+                            Class<?> listType = Object.class;
+                            if (familyField.getGenericType() instanceof ParameterizedType) {
+                                listType = (Class<?>) ((ParameterizedType) familyField.getGenericType())
+                                        .getActualTypeArguments()[0];
+                            }
+                            for (JsonNode item : node) {
+                                Object parsed = objectMapper.treeToValue(item, listType);
+                                list.add(parsed);
+                            }
+                        } else if (node.isObject()) {
+                            list.add(objectMapper.convertValue(node, new TypeReference<Map<String, Object>>() {
+                            }));
                         } else {
-                            listObject.add(cellValue); // Add as plain string if not a JSON object
+                            list.add(cellValue);
                         }
-                    } else if (familyObject != null) {
-                        // Assuming hbaseColumnName is the field name within the familyObject
-                        String subFieldName = columnMapping.getOrDefault(hbaseColumnName, hbaseColumnName);
-                        try {
-                            Field subField = familyObject.getClass().getDeclaredField(subFieldName);
-                            subField.setAccessible(true);
-                            setField(subField, familyObject, cellValue); // Use your existing setField helper
-                        } catch (NoSuchFieldException e) {
-                            System.err.println("Sub-field '" + subFieldName + "' not found in nested object of type '"
-                                    + familyObject.getClass().getSimpleName() + "' for family '" + familyName + "'");
-                        }
-                    }
 
-                } else if (targetFieldName != null) { // Direct mapping to a field in the root object
-                    Field field = object.getClass().getDeclaredField(targetFieldName);
+                    } else {
+                        // Assume it's a nested object
+                        Field subField;
+                        try {
+                            subField = familyObject.getClass().getDeclaredField(targetField);
+                        } catch (NoSuchFieldException e) {
+                            System.err.printf("⚠️ Sub-field '%s' not found in '%s'. Skipping.%n", targetField,
+                                    familyObject.getClass().getSimpleName());
+                            continue;
+                        }
+
+                        subField.setAccessible(true);
+                        setField(subField, familyObject, cellValue);
+                    }
+                } else {
+                    Field field;
+                    try {
+                        field = modelClass.getDeclaredField(targetField);
+                    } catch (NoSuchFieldException e) {
+                        // Skip fields not defined in the Java model
+                        System.err.printf("⚠️ Field '%s' not found in model class '%s'. Skipping it.%n", targetField,
+                                modelClass.getSimpleName());
+                        continue;
+                    }
                     field.setAccessible(true);
 
                     if (field.getType().isEnum()) {
-                        Object[] enumConstants = field.getType().getEnumConstants();
-                        for (Object constant : enumConstants) {
+                        Object[] constants = field.getType().getEnumConstants();
+                        for (Object constant : constants) {
                             if (((Enum<?>) constant).name().equals(cellValue)) {
                                 field.set(object, constant);
                                 break;
                             }
                         }
                     } else if (field.getType().isArray()) {
-                        Class<?> componentType = field.getType().getComponentType();
-                        ObjectMapper objectMapper = new ObjectMapper();
-
-                        // Prepare the list to hold existing + new elements
-                        List<Object> list = objectMapper.readValue(cellValue, new TypeReference<List<Object>>(){});
-
-                        // If the current array is not null, copy elements into the list
-
-                        // Convert the list back into a new array
-                        Object newArray = Array.newInstance(componentType, list.size());
-                        for (int i = 0; i < list.size(); i++) {
-                            Array.set(newArray, i, list.get(i));
+                        Class<?> compType = field.getType().getComponentType();
+                        JsonNode node = objectMapper.readTree(cellValue);
+                        if (node.isArray()) {
+                            Object array = Array.newInstance(compType, node.size());
+                            for (int i = 0; i < node.size(); i++) {
+                                Object value = objectMapper.treeToValue(node.get(i), compType);
+                                Array.set(array, i, value);
+                            }
+                            field.set(object, array);
                         }
-
-                        // Set the new array back into the object
-                        field.set(object, newArray);
-
                     } else {
-                        setField(field, object, cellValue); // Use your existing setField helper
+                        setField(field, object, cellValue);
                     }
                 }
             }
+
             return object;
 
-        } catch (IOException | ReflectiveOperationException e) { // Broader exception catch
-            // Log the exception (e.g., using a logger)
-            e.printStackTrace(); // Or proper logging
-            throw new RuntimeException("Error getting data by column value: " + e.getMessage(), e);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to get row data", e);
         } finally {
             try {
-                if (scanner != null) {
+                if (scanner != null)
                     scanner.close();
-                }
-                if (table != null) {
+                if (table != null)
                     table.close();
-                }
             } catch (IOException e) {
-                // Log this exception as well
                 e.printStackTrace();
             }
         }
@@ -600,7 +639,6 @@ public class HBaseCustomClient {
         }
         throw new IllegalArgumentException("Unsupported type: " + targetType);
     }
-    
 
     public <T> List<T> getDataListByColumn(String tableName, Map<String, String> columnMapping, String familyName,
             String columnName, String columnValue, Class<T> modelClass, int sizeLimit) {
